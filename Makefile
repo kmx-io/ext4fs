@@ -13,5 +13,5 @@
 all: build
 
 build:
+	${MAKE} -C inspect_ext4fs
 	${MAKE} -C newfs_ext4fs
-#	${MAKE} -C mount_ext4fs

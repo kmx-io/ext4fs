@@ -10,10 +10,10 @@
 ## AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
 ## THIS SOFTWARE.
 
-PROG =    newfs_ext4fs
+PROG =    inspect_ext4fs
 HEADERS = ../include/ext4fs.h
-SOURCES = newfs_ext4fs.c ../ext4fs.c
-OBJECTS = newfs_ext4fs.o ../ext4fs.o
+SOURCES = inspect_ext4fs.c ../ext4fs.c
+OBJECTS = inspect_ext4fs.o ../ext4fs.o
 
 CPPFLAGS = -I../include
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
