@@ -30,7 +30,11 @@ typedef struct {
 #define EXT4FS_SUPER_BLOCK_SIZE 1024
 #define EXT4FS_VALID_FS 1
 
-#define EXT4FS_ERRORS_CONTINUE 1
+#define EXT4FS_ERRORS_CONTINUE  1  // Log and keep going
+#define EXT4FS_ERRORS_RO        2  // Remount read-only
+#define EXT4FS_ERRORS_PANIC     3  // Kernel panic
+
+extern const char *ext4fs_errors_str[];
 
 #define EXT4FS_FEATURE_COMPAT_DIR_PREALLOC   0x0001
 #define EXT4FS_FEATURE_COMPAT_IMAGIC_INODES  0x0002
@@ -108,8 +112,8 @@ struct ext4fs_super_block {
   uint16_t sb_mount_count;
   int16_t  sb_max_mount_count_before_fsck;
   uint16_t sb_magic;
-  uint16_t sb_state;                // File system state
-  uint16_t sb_errors;               // Behaviour when detecting errors
+  uint16_t sb_state;                // EXT4FS_STATE_*
+  uint16_t sb_errors;               // EXT4FS_ERRORS_*
   uint16_t sb_rev_level_minor;      // Minor revision level
 
   uint32_t sb_lastcheck;            // Last check time

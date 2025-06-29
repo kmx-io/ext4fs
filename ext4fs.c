@@ -24,6 +24,14 @@
 
 #include <ext4fs.h>
 
+const char *ext4fs_errors_str[] = {
+  "0",
+  "continue",
+  "remount-ro",
+  "panic",
+  NULL
+};
+
 const s_enum ext4fs_feature_compat_enum[] = {
   {EXT4FS_FEATURE_COMPAT_DIR_PREALLOC,  "dir_prealloc"},
   {EXT4FS_FEATURE_COMPAT_IMAGIC_INODES, "imagic_inodes"},
@@ -131,6 +139,15 @@ int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
   if (ext4fs_64bit(sb))
     *dest |= ((uint64_t) le32toh(sb->sb_blocks_count_hi) << 32);
   return 0;
+}
+
+const char * ext4fs_errors_to_str (uint16_t errors)
+{
+  if (errors >= sizeof(ext4fs_errors_str) / sizeof(const char *)) {
+    warnx("ext4fs_errors_to_str: invalid sb_errors: %u", errors);
+    return NULL;
+  }
+  return ext4fs_errors_str[errors];
 }
 
 int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
@@ -327,7 +344,9 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          le16toh(sb->sb_magic), le16toh(sb->sb_magic));
   ext4fs_inspect_enum(le16toh(sb->sb_state), ext4fs_state_enum);
   printf(",\n"
-         "                   sb_rev_level: (U32) %u,\n"
+         "                   sb_errors: %s,\n",
+         ext4fs_errors_to_str(le16toh(sb->sb_errors)));
+  printf("                   sb_rev_level: (U32) %u,\n"
          "                   sb_rev_level_minor: (U16) %u,\n"
          "                   sb_feature_compat: ",
          le32toh(sb->sb_rev_level),
