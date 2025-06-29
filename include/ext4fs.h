@@ -22,8 +22,8 @@ typedef struct {
   const char *name;
 } s_enum;
 
-#define EXT4FS_DYNAMIC_REV 1
-#define EXT4FS_DYNAMIC_REV_MINOR 0
+#define EXT4FS_REV_DYNAMIC 1
+#define EXT4FS_REV_MINOR 0
 #define EXT4FS_LABEL_MAX 16
 #define EXT4FS_MAGIC 0xEF53
 #define EXT4FS_SUPER_BLOCK_OFFSET 1024
@@ -87,6 +87,8 @@ extern const s_enum ext4fs_feature_ro_compat_enum[];
 #define EXT4FS_OS_LITES     4
 #define EXT4FS_OS_OPENBSD   5
 
+extern const char *ext4fs_os_str[];
+
 #define EXT4FS_STATE_VALID  0x0001  // Clean unmount
 #define EXT4FS_STATE_ERROR  0x0002  // Errors detected (fsck needed)
 
@@ -114,30 +116,30 @@ struct ext4fs_super_block {
   uint16_t sb_magic;
   uint16_t sb_state;                // EXT4FS_STATE_*
   uint16_t sb_errors;               // EXT4FS_ERRORS_*
-  uint16_t sb_rev_level_minor;      // Minor revision level
+  uint16_t sb_revision_level_minor;
 
-  uint32_t sb_lastcheck;            // Last check time
-  uint32_t sb_checkinterval;        // Max time between checks
-  uint32_t sb_creator_os;           // OS
-  uint32_t sb_rev_level;            // Revision level
+  uint32_t sb_check_time;
+  uint32_t sb_check_interval;
+  uint32_t sb_creator_os;           // EXT4FS_OS_*
+  uint32_t sb_revision_level;
 
-  uint16_t sb_def_resuid;           // Default uid for reserved blocks
-  uint16_t sb_def_resgid;           // Default gid for reserved blocks
+  uint16_t sb_default_reserved_uid;
+  uint16_t sb_default_reserved_gid;
 
-  uint32_t sb_first_ino;            // First non-reserved inode
-  uint16_t sb_inode_size;           // Inode size
-  uint16_t sb_block_group_nr;       // Block group # of this superblock
-  uint32_t sb_feature_compat;       // Compatible feature set
+  uint32_t sb_first_non_reserved_inode;
+  uint16_t sb_inode_size;
+  uint16_t sb_block_group_id;
+  uint32_t sb_feature_compat;
 
-  uint32_t sb_feature_incompat;     // Incompatible feature set
-  uint32_t sb_feature_ro_compat;    // Read-only compatible feature set
-  uint8_t  sb_uuid[16];             // 128-bit filesystem UUID
+  uint32_t sb_feature_incompat;
+  uint32_t sb_feature_ro_compat;
+  uint8_t  sb_uuid[16];
   char     sb_volume_name[EXT4FS_LABEL_MAX];
-  char     sb_last_mounted[64];     // Directory where last mounted
-  uint32_t sb_algorithm_usage_bitmap; // For compression (unused)
+  char     sb_last_mounted[64];
+  uint32_t sb_algorithm_usage_bitmap;
 
-  uint8_t  sb_prealloc_blocks;      // Blocks to preallocate
-  uint8_t  sb_prealloc_dir_blocks;  // Blocks to preallocate for dirs
+  uint8_t  sb_preallocate_blocks;
+  uint8_t  sb_preallocate_dir_blocks;
   uint16_t sb_reserved_gdt_blocks;  // Per group desc for online growth
 
   uint8_t  sb_journal_uuid[16];     // UUID of journal superblock
@@ -152,7 +154,7 @@ struct ext4fs_super_block {
 
   uint32_t sb_default_mount_opts;
   uint32_t sb_first_meta_bg;        // First metablock block group
-  uint32_t sb_mkfs_time;            // When the FS was created
+  uint32_t sb_newfs_time;
   uint32_t sb_jnl_blocks[17];       // Backup of journal inode
 
   uint32_t sb_blocks_count_hi;
@@ -267,7 +269,11 @@ int ext4fs_inode_table (const struct ext4fs_super_block *sb,
 
 int ext4fs_inspect (int fd);
 
+void ext4fs_inspect_creator_os (uint16_t creator_os);
+
 int ext4fs_inspect_enum (uint32_t x, const s_enum *enum_desc);
+
+void ext4fs_inspect_errors (uint16_t errors);
 
 int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
                                const struct ext4fs_group_desc *gd);

@@ -204,30 +204,30 @@ int main (int argc, char **argv)
   // assuming 1 group for now
   sb->sb_inodes_per_group = htole32(inodes_per_group);
   sb->sb_inode_size = htole16(inode_size);
-  sb->sb_first_ino = htole32(inodes_reserved); // first non-reserved inode
+  sb->sb_first_non_reserved_inode = htole32(inodes_reserved); // first non-reserved inode
   sb->sb_state = htole16(EXT4FS_VALID_FS);
   sb->sb_errors = htole16(EXT4FS_ERRORS_CONTINUE);
-  sb->sb_rev_level = htole32(EXT4FS_DYNAMIC_REV);
-  sb->sb_rev_level_minor = htole16(EXT4FS_DYNAMIC_REV_MINOR);
+  sb->sb_revision_level = htole32(EXT4FS_REV_DYNAMIC);
+  sb->sb_revision_level_minor = htole16(EXT4FS_REV_MINOR);
   sb->sb_mount_time = htole32(now);
   sb->sb_write_time = htole32(now);
-  sb->sb_mkfs_time = htole32(now);
-  sb->sb_lastcheck = htole32(now);
-  sb->sb_checkinterval = htole32(6 * 30 * 24 * 60 * 60); // 6 months
+  sb->sb_newfs_time = htole32(now);
+  sb->sb_check_time = htole32(now);
+  sb->sb_check_interval = htole32(6 * 30 * 24 * 60 * 60); // 6 months
   sb->sb_feature_incompat = htole32(EXT4FS_FEATURE_INCOMPAT_EXTENTS |
                                     EXT4FS_FEATURE_INCOMPAT_64BIT);
   sb->sb_feature_ro_compat = htole32(EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER);
   sb->sb_desc_size = htole16(gd_size);
   sb->sb_creator_os = htole32(EXT4FS_OS_OPENBSD);
-  sb->sb_def_resuid = htole16(0);
-  sb->sb_def_resgid = htole16(0);
+  sb->sb_default_reserved_uid = htole16(0);
+  sb->sb_default_reserved_gid = htole16(0);
   sb->sb_max_mount_count_before_fsck = (int16_t) htole16(-1);
   sb->sb_mount_count = htole16(0);
   strncpy(sb->sb_volume_name, "ext4 disk", sizeof(sb->sb_volume_name));
   uuid_v4_gen(sb->sb_uuid);
   printf("uuid: ");
   uuid_print(sb->sb_uuid);
-  sb->sb_block_group_nr = htole16(0);
+  sb->sb_block_group_id = htole16(0);
   printf("\n");
   if (lseek(fd, 0, SEEK_SET) < 0)
     err(1, "lseek");

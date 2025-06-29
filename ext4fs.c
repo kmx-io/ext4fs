@@ -79,6 +79,16 @@ const s_enum ext4fs_feature_ro_compat_enum[] = {
   {0, NULL}
 };
 
+const char *ext4fs_os_str[] = {
+  "Linux",
+  "Hurd",
+  "Masix",
+  "FreeBSD",
+  "Lites",
+  "OpenBSD",
+  NULL
+};
+
 const s_enum ext4fs_state_enum[] = {
   {EXT4FS_STATE_VALID, "valid"},
   {EXT4FS_STATE_ERROR, "error"},
@@ -247,6 +257,14 @@ int ext4fs_inspect (int fd)
   return 0;
 }
 
+void ext4fs_inspect_os (uint32_t os)
+{
+  if (os < sizeof(ext4fs_os_str) / sizeof(const char *) - 1)
+    printf("%s", ext4fs_os_str[os]);
+  else
+    printf("(U32) %u", os);
+}
+
 int ext4fs_inspect_enum (uint32_t x, const s_enum *enum_desc)
 {
   const s_enum *e = enum_desc;
@@ -298,6 +316,7 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   uint64_t blocks_count;
   uint64_t free_blocks_count;
   uint64_t reserved_blocks_count;
+  char str_check_time[32];
   char str_mount_time[32];
   char str_write_time[32];
   if (ext4fs_blocks_count(sb, &blocks_count) ||
@@ -306,7 +325,9 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
       ext4fs_time_to_str(le32toh(sb->sb_mount_time), str_mount_time,
                          sizeof(str_mount_time)) ||
       ext4fs_time_to_str(le32toh(sb->sb_write_time), str_write_time,
-                         sizeof(str_write_time)))
+                         sizeof(str_write_time)) ||
+      ext4fs_time_to_str(le32toh(sb->sb_check_time), str_check_time,
+                         sizeof(str_check_time)))
     return -1;
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
          "                   sb_blocks_count: (U64) %lu,\n"
@@ -323,7 +344,7 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_write_time: (U32) %u,\t# %s\n"
          "                   sb_mount_count: (U16) %u,\n"
          "                   sb_max_mount_count: (S16) %d,\n"
-         "                   sb_magic: (U16) 0x%04X,\t\t# %u,\n"
+         "                   sb_magic: (U16) 0x%04X,\t\t# %u\n"
          "                   sb_state: ",
          le32toh(sb->sb_inodes_count),
          blocks_count, reserved_blocks_count, free_blocks_count,
@@ -346,11 +367,19 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_errors: ");
   ext4fs_inspect_errors(le16toh(sb->sb_errors));
   printf(",\n"
-         "                   sb_rev_level: (U32) %u,\n"
-         "                   sb_rev_level_minor: (U16) %u,\n"
+         "                   sb_revision_level_minor: (U16) %u,\n"
+         "                   sb_check_time: (U32) %u,\t# %s\n"
+         "                   sb_check_interval: (U32) %u,\n"
+         "                   sb_creator_os: (U32) %u,\t\t# ",
+         le32toh(sb->sb_revision_level_minor),
+         le32toh(sb->sb_check_time), str_check_time,
+         le32toh(sb->sb_check_interval),
+         le32toh(sb->sb_creator_os));
+  ext4fs_inspect_os(le32toh(sb->sb_creator_os));
+  printf("\n"
+         "                   sb_revision_level: (U32) %u,\n"
          "                   sb_feature_compat: ",
-         le32toh(sb->sb_rev_level),
-         le32toh(sb->sb_rev_level_minor));
+         le32toh(sb->sb_revision_level));
   ext4fs_inspect_enum(le32toh(sb->sb_feature_compat),
                       ext4fs_feature_compat_enum);
   printf(",\n"
