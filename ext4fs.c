@@ -141,15 +141,6 @@ int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-const char * ext4fs_errors_to_str (uint16_t errors)
-{
-  if (errors >= sizeof(ext4fs_errors_str) / sizeof(const char *)) {
-    warnx("ext4fs_errors_to_str: invalid sb_errors: %u", errors);
-    return NULL;
-  }
-  return ext4fs_errors_str[errors];
-}
-
 int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
                               uint64_t *dest)
 {
@@ -274,6 +265,14 @@ int ext4fs_inspect_enum (uint32_t x, const s_enum *enum_desc)
     printf("0");
   return 0;
 }
+
+void ext4fs_inspect_errors (uint16_t errors)
+{
+  if (errors < sizeof(ext4fs_errors_str) / sizeof(const char *) - 1)
+    printf("%s", ext4fs_errors_str[errors]);
+  else
+    printf("(U16) %u", errors);
+}
     
 int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
                                const struct ext4fs_group_desc *gd)
@@ -344,9 +343,10 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          le16toh(sb->sb_magic), le16toh(sb->sb_magic));
   ext4fs_inspect_enum(le16toh(sb->sb_state), ext4fs_state_enum);
   printf(",\n"
-         "                   sb_errors: %s,\n",
-         ext4fs_errors_to_str(le16toh(sb->sb_errors)));
-  printf("                   sb_rev_level: (U32) %u,\n"
+         "                   sb_errors: ");
+  ext4fs_inspect_errors(le16toh(sb->sb_errors));
+  printf(",\n"
+         "                   sb_rev_level: (U32) %u,\n"
          "                   sb_rev_level_minor: (U16) %u,\n"
          "                   sb_feature_compat: ",
          le32toh(sb->sb_rev_level),
