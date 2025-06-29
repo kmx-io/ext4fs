@@ -19,3 +19,5 @@ build:
 
 test: build
 	${MAKE} -C test test
+
+.PHONY: all build test

@@ -22,8 +22,12 @@ all: build
 
 build: ${PROG}
 
-${PROG}: ${OBJECTS} ${HEADERS}
+${OBJECTS}: ${HEADERS}
+
+${PROG}: ${OBJECTS}
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJECTS} -o ${PROG}
 
 test: build
 	./${PROG}
+
+.PHONY: all build test

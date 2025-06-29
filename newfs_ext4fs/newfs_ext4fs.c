@@ -209,8 +209,8 @@ int main (int argc, char **argv)
   sb->sb_errors = htole16(EXT4FS_ERRORS_CONTINUE);
   sb->sb_rev_level = htole32(EXT4FS_DYNAMIC_REV);
   sb->sb_rev_level_minor = htole16(EXT4FS_DYNAMIC_REV_MINOR);
-  sb->sb_mtime = htole32(now);
-  sb->sb_wtime = htole32(now);
+  sb->sb_mount_time = htole32(now);
+  sb->sb_write_time = htole32(now);
   sb->sb_mkfs_time = htole32(now);
   sb->sb_lastcheck = htole32(now);
   sb->sb_checkinterval = htole32(6 * 30 * 24 * 60 * 60); // 6 months
@@ -221,8 +221,8 @@ int main (int argc, char **argv)
   sb->sb_creator_os = htole32(EXT4FS_OS_OPENBSD);
   sb->sb_def_resuid = htole16(0);
   sb->sb_def_resgid = htole16(0);
-  sb->sb_max_mnt_count = htole16(20);
-  sb->sb_mnt_count = htole16(0);
+  sb->sb_max_mount_count_before_fsck = (int16_t) htole16(-1);
+  sb->sb_mount_count = htole16(0);
   strncpy(sb->sb_volume_name, "ext4 disk", sizeof(sb->sb_volume_name));
   uuid_v4_gen(sb->sb_uuid);
   printf("uuid: ");

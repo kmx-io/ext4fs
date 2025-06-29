@@ -18,14 +18,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 
 #include <linux/fs.h>
 
 #include <ext4fs.h>
 
-const s_enum ext4fs_feature_compat[] = {
+const s_enum ext4fs_feature_compat_enum[] = {
   {EXT4FS_FEATURE_COMPAT_DIR_PREALLOC,  "dir_prealloc"},
   {EXT4FS_FEATURE_COMPAT_IMAGIC_INODES, "imagic_inodes"},
   {EXT4FS_FEATURE_COMPAT_HAS_JOURNAL,   "has_journal"},
@@ -35,7 +34,7 @@ const s_enum ext4fs_feature_compat[] = {
   {0, NULL}
 };
 
-const s_enum ext4fs_feature_incompat[] = {
+const s_enum ext4fs_feature_incompat_enum[] = {
   {EXT4FS_FEATURE_INCOMPAT_COMPRESSION, "compression"},
   {EXT4FS_FEATURE_INCOMPAT_FILETYPE,    "filetype"},
   {EXT4FS_FEATURE_INCOMPAT_RECOVER,     "recover"},
@@ -54,7 +53,7 @@ const s_enum ext4fs_feature_incompat[] = {
   {0, NULL}
 };
 
-const s_enum ext4fs_feature_ro_compat[] = {
+const s_enum ext4fs_feature_ro_compat_enum[] = {
   {EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER,  "sparse_super"},
   {EXT4FS_FEATURE_RO_COMPAT_LARGE_FILE,    "large_file"},
   {EXT4FS_FEATURE_RO_COMPAT_BTREE_DIR,     "btree_dir"},
@@ -69,6 +68,12 @@ const s_enum ext4fs_feature_ro_compat[] = {
   {EXT4FS_FEATURE_RO_COMPAT_REPLICA,       "replica"},
   {EXT4FS_FEATURE_RO_COMPAT_READONLY,      "readonly"},
   {EXT4FS_FEATURE_RO_COMPAT_PROJECT,       "project"},
+  {0, NULL}
+};
+
+const s_enum ext4fs_state_enum[] = {
+  {EXT4FS_STATE_VALID, "valid"},
+  {EXT4FS_STATE_ERROR, "error"},
   {0, NULL}
 };
 
@@ -233,6 +238,25 @@ int ext4fs_inspect (int fd)
   printf("EOF\n");
   return 0;
 }
+
+int ext4fs_inspect_enum (uint32_t x, const s_enum *enum_desc)
+{
+  const s_enum *e = enum_desc;
+  char first = 1;
+  while (e->name) {
+    if (x & e->value) {
+      if (! first)
+        printf(" | ");
+      else
+        first = 0;
+      printf("%s", e->name);
+    }
+    e++;
+  }
+  if (first)
+    printf("0");
+  return 0;
+}
     
 int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
                                const struct ext4fs_group_desc *gd)
@@ -253,36 +277,20 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-int time_to_str (time_t time, char *str, size_t size)
-{
-  struct tm *local;
-  if (size < 25) {
-    warnx("time_to_str: size < 25");
-    return -1;
-  }
-  local = localtime(&time);
-  if (! strftime(str, size, "%F %T %Z", local)) {
-    warnx("time_to_str: strftime");
-    return -1;
-  }
-  return 0;
-}
-
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
 {
   uint64_t blocks_count;
   uint64_t free_blocks_count;
   uint64_t reserved_blocks_count;
-  const s_enum *e;
-  uint32_t feature;
-  int first;
-  char str_mtime[32];
-  char str_wtime[32];
+  char str_mount_time[32];
+  char str_write_time[32];
   if (ext4fs_blocks_count(sb, &blocks_count) ||
       ext4fs_reserved_blocks_count(sb, &reserved_blocks_count) ||
       ext4fs_free_blocks_count(sb, &free_blocks_count) ||
-      time_to_str(le32toh(sb->sb_mtime), str_mtime, sizeof(str_mtime)) ||
-      time_to_str(le32toh(sb->sb_wtime), str_wtime, sizeof(str_wtime)))
+      ext4fs_time_to_str(le32toh(sb->sb_mount_time), str_mount_time,
+                         sizeof(str_mount_time)) ||
+      ext4fs_time_to_str(le32toh(sb->sb_write_time), str_write_time,
+                         sizeof(str_write_time)))
     return -1;
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
          "                   sb_blocks_count: (U64) %lu,\n"
@@ -295,11 +303,12 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_blocks_per_group: (U32) %u,\n"
          "                   sb_clusters_per_group: (U32) %u,\n"
          "                   sb_inodes_per_group: (U32) %u,\n"
-         "                   sb_mtime: (U32) %u,\t# %s\n"
-         "                   sb_wtime: (U32) %u,\t# %s\n"
-         "                   sb_rev_level: (U32) %u,\n"
-         "                   sb_rev_level_minor: (U16) %u,\n"
-         "                   sb_feature_compat: ",
+         "                   sb_mount_time: (U32) %u,\t# %s\n"
+         "                   sb_write_time: (U32) %u,\t# %s\n"
+         "                   sb_mount_count: (U16) %u,\n"
+         "                   sb_max_mount_count: (S16) %d,\n"
+         "                   sb_magic: (U16) 0x%04X,\t\t# %u,\n"
+         "                   sb_state: ",
          le32toh(sb->sb_inodes_count),
          blocks_count, reserved_blocks_count, free_blocks_count,
          le32toh(sb->sb_free_inodes_count),
@@ -311,59 +320,28 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          le32toh(sb->sb_blocks_per_group),
          le32toh(sb->sb_clusters_per_group),
          le32toh(sb->sb_inodes_per_group),
-         le32toh(sb->sb_mtime), str_mtime,
-         le32toh(sb->sb_wtime), str_wtime,
+         le32toh(sb->sb_mount_time), str_mount_time,
+         le32toh(sb->sb_write_time), str_write_time,
+         le16toh(sb->sb_mount_count),
+         (int16_t) le16toh(sb->sb_max_mount_count_before_fsck),
+         le16toh(sb->sb_magic), le16toh(sb->sb_magic));
+  ext4fs_inspect_enum(le16toh(sb->sb_state), ext4fs_state_enum);
+  printf(",\n"
+         "                   sb_rev_level: (U32) %u,\n"
+         "                   sb_rev_level_minor: (U16) %u,\n"
+         "                   sb_feature_compat: ",
          le32toh(sb->sb_rev_level),
          le32toh(sb->sb_rev_level_minor));
-  feature = le32toh(sb->sb_feature_compat);
-  e = ext4fs_feature_compat;
-  first = 1;
-  while (e->name) {
-    if (feature & e->value) {
-      if (! first)
-        printf(" | ");
-      else
-        first = 0;
-      printf("%s", e->name);
-    }
-    e++;
-  }
-  if (first)
-    printf("0");
+  ext4fs_inspect_enum(le32toh(sb->sb_feature_compat),
+                      ext4fs_feature_compat_enum);
   printf(",\n"
          "                   sb_feature_incompat: ");
-  feature = le32toh(sb->sb_feature_incompat);
-  e = ext4fs_feature_incompat;
-  first = 1;
-  while (e->name) {
-    if (feature & e->value) {
-      if (! first)
-        printf(" | ");
-      else
-        first = 0;
-      printf("%s", e->name);
-    }
-    e++;
-  }
-  if (first)
-    printf("0");
+  ext4fs_inspect_enum(le32toh(sb->sb_feature_incompat),
+                      ext4fs_feature_incompat_enum);
   printf(",\n"
          "                   sb_feature_ro_compat: ");
-  feature = le32toh(sb->sb_feature_ro_compat);
-  e = ext4fs_feature_ro_compat;
-  first = 1;
-  while (e->name) {
-    if (feature & e->value) {
-      if (! first)
-        printf(" | ");
-      else
-        first = 0;
-      printf("%s", e->name);
-    }
-    e++;
-  }
-  if (first)
-    printf("0");
+  ext4fs_inspect_enum(le32toh(sb->sb_feature_ro_compat),
+                      ext4fs_feature_ro_compat_enum);
   printf("}\n");
   return 0;
 }
@@ -417,4 +395,19 @@ ext4fs_super_block_read (struct ext4fs_super_block *sb,
     remaining -= r;
   }
   return sb;
+}
+
+int ext4fs_time_to_str (time_t time, char *str, size_t size)
+{
+  struct tm *local;
+  if (size < 25) {
+    warnx("time_to_str: size < 25");
+    return -1;
+  }
+  local = localtime(&time);
+  if (! strftime(str, size, "%F %T %Z", local)) {
+    warnx("time_to_str: strftime");
+    return -1;
+  }
+  return 0;
 }

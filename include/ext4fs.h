@@ -15,6 +15,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <time.h>
 
 typedef struct {
   uint32_t value;
@@ -38,7 +39,7 @@ typedef struct {
 #define EXT4FS_FEATURE_COMPAT_RESIZE_INODE   0x0010
 #define EXT4FS_FEATURE_COMPAT_DIR_INDEX      0x0020
 
-extern const s_enum ext4fs_feature_compat[];
+extern const s_enum ext4fs_feature_compat_enum[];
 
 #define EXT4FS_FEATURE_INCOMPAT_COMPRESSION  0x00001 // Not used in ext4
 #define EXT4FS_FEATURE_INCOMPAT_FILETYPE     0x00002 // Directory entry has type
@@ -56,7 +57,7 @@ extern const s_enum ext4fs_feature_compat[];
 #define EXT4FS_FEATURE_INCOMPAT_INLINE_DATA  0x08000 // Inline file data
 #define EXT4FS_FEATURE_INCOMPAT_ENCRYPT      0x10000 // File encryption
 
-extern const s_enum ext4fs_feature_incompat[];
+extern const s_enum ext4fs_feature_incompat_enum[];
 
 #define EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER   0x0001
 #define EXT4FS_FEATURE_RO_COMPAT_LARGE_FILE     0x0002
@@ -73,7 +74,7 @@ extern const s_enum ext4fs_feature_incompat[];
 #define EXT4FS_FEATURE_RO_COMPAT_READONLY       0x1000
 #define EXT4FS_FEATURE_RO_COMPAT_PROJECT        0x2000
 
-extern const s_enum ext4fs_feature_ro_compat[];
+extern const s_enum ext4fs_feature_ro_compat_enum[];
 
 #define EXT4FS_OS_LINUX     0
 #define EXT4FS_OS_HURD      1
@@ -81,6 +82,11 @@ extern const s_enum ext4fs_feature_ro_compat[];
 #define EXT4FS_OS_FREEBSD   3
 #define EXT4FS_OS_LITES     4
 #define EXT4FS_OS_OPENBSD   5
+
+#define EXT4FS_STATE_VALID  0x0001  // Clean unmount
+#define EXT4FS_STATE_ERROR  0x0002  // Errors detected (fsck needed)
+
+extern const s_enum ext4fs_state_enum[];
 
 struct ext4fs_super_block {
   uint32_t sb_inodes_count;
@@ -96,12 +102,12 @@ struct ext4fs_super_block {
   uint32_t sb_blocks_per_group;
   uint32_t sb_clusters_per_group;
   uint32_t sb_inodes_per_group;
-  uint32_t sb_mtime;                // Mount time
+  uint32_t sb_mount_time;
 
-  uint32_t sb_wtime;                // Write time
-  uint16_t sb_mnt_count;            // Mount count
-  uint16_t sb_max_mnt_count;        // Max mount count before fsck
-  uint16_t sb_magic;                // Magic signature
+  uint32_t sb_write_time;
+  uint16_t sb_mount_count;
+  int16_t  sb_max_mount_count_before_fsck;
+  uint16_t sb_magic;
   uint16_t sb_state;                // File system state
   uint16_t sb_errors;               // Behaviour when detecting errors
   uint16_t sb_rev_level_minor;      // Minor revision level
@@ -257,6 +263,8 @@ int ext4fs_inode_table (const struct ext4fs_super_block *sb,
 
 int ext4fs_inspect (int fd);
 
+int ext4fs_inspect_enum (uint32_t x, const s_enum *enum_desc);
+
 int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
                                const struct ext4fs_group_desc *gd);
 
@@ -270,5 +278,7 @@ int ext4fs_size (int fd, uint64_t *dest);
 struct ext4fs_super_block *
 ext4fs_super_block_read (struct ext4fs_super_block *sb,
                          int fd);
+
+int ext4fs_time_to_str (time_t time, char *str, size_t size);
 
 #endif /* EXT4FS_H */
