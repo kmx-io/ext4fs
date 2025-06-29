@@ -13,19 +13,22 @@
 #define _DEFAULT_SOURCE 1
 #include <endian.h>
 #include <err.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <time.h>
 #include <unistd.h>
 
 #include <linux/fs.h>
 
-#include <ext4fs.h>
+#include "../include/ext4fs.h"
+#include "../include/uuid.h"
 
-void arc4random_buf(void *buf, size_t n);
+static char *progname = NULL;
 
 void group_desc_init (struct ext4fs_group_desc *gd,
                       uint32_t block_bitmap_block,
@@ -34,8 +37,8 @@ void group_desc_init (struct ext4fs_group_desc *gd,
                       uint32_t free_blocks,
                       uint32_t free_inodes,
                       uint16_t used_dirs);
-void uuid_gen_v4(uint8_t uuid[16]);
-void uuid_print(const uint8_t uuid[16]);
+
+static void usage (void);
 
 void group_desc_init (struct ext4fs_group_desc *gd,
                       uint32_t block_bitmap_block,
@@ -49,28 +52,33 @@ void group_desc_init (struct ext4fs_group_desc *gd,
   gd->gd_block_bitmap_lo = htole32(block_bitmap_block);
   gd->gd_inode_bitmap_lo = htole32(inode_bitmap_block);
   gd->gd_inode_table_lo = htole32(inode_table_start);
-  gd->gd_free_blocks_count = htole16((uint16_t)(free_blocks & 0xFFFF));
-  gd->gd_free_inodes_count = htole16((uint16_t)(free_inodes & 0xFFFF));
+  gd->gd_free_blocks_count = htole16((uint16_t) (free_blocks & 0xFFFF));
+  gd->gd_free_inodes_count = htole16((uint16_t) (free_inodes & 0xFFFF));
   gd->gd_used_dirs_count = htole16(used_dirs);
-  gd->gd_free_blocks_count_hi = htole16((uint16_t)(free_blocks >> 16));
-  gd->gd_free_inodes_count_hi = htole16((uint16_t)(free_inodes >> 16));
+  gd->gd_free_blocks_count_hi = htole16((uint16_t) (free_blocks >> 16));
+  gd->gd_free_inodes_count_hi = htole16((uint16_t) (free_inodes >> 16));
   gd->gd_used_dirs_count_hi = 0;
 }
 
-void uuid_gen_v4(uint8_t uuid[16]) {
-  arc4random_buf(uuid, 16);
-  uuid[6] = (uuid[6] & 0x0F) | 0x40; // Set UUID version to 4 (0100xxxx)
-  uuid[8] = (uuid[8] & 0x3F) | 0x80; // Set UUID variant to RFC 4122 (10xxxxxx)
+uint32_t * parse_opt_u32 (uint32_t *dest, const char *str,
+                          const char *optname)
+{
+  char *end = NULL;
+  errno = 0;
+  unsigned long val = strtoul(str, &end, 0);
+  if (errno || *end != '\0' || val > UINT32_MAX) {
+    fprintf(stderr, "Invalid value for -%s: '%s'\n", optname, str);
+    usage();
+  }
+  *dest = (uint32_t) val;
+  return dest;
 }
 
-void uuid_print(const uint8_t uuid[16]) {
-  printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
-         "%02x%02x%02x%02x%02x%02x\n",
-         uuid[0], uuid[1], uuid[2], uuid[3],
-         uuid[4], uuid[5],
-         uuid[6], uuid[7],
-         uuid[8], uuid[9],
-         uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+static void usage (void) {
+  fprintf(stderr,
+          "Usage: %s [-b block-size] [-i bytes-per-inode] [-s size-in-blocks]\n"
+          "  [-L label] [-n] [-v] [-F] device\n", progname);
+  exit(1);
 }
 
 int main (int argc, char **argv)
@@ -82,6 +90,7 @@ int main (int argc, char **argv)
   uint64_t blocks_total;
   uint64_t blocks_data;
   char *buffer = NULL;
+  int c;
   ssize_t done;
   int fd;
   struct ext4fs_group_desc *gd;
@@ -96,6 +105,7 @@ int main (int argc, char **argv)
   uint32_t inodes_per_group;
   uint16_t inodes_reserved;
   uint32_t inodes_total;
+  const char *label;
   time_t now;
   size_t remaining;
   uint64_t reserved_blocks;
@@ -104,6 +114,26 @@ int main (int argc, char **argv)
   uint64_t size;
   uint16_t used_dirs;
   ssize_t w;
+  if (! argv || ! argv[0]) {
+    progname = "newfs_ext4fs";
+    usage();
+  }
+  while ((c = getopt(argc, argv, "b:i:s:L:nvF")) != -1) {
+    switch (c) {
+    case 'b':
+      block_size = atoi(optarg);
+      break;
+    case 'i':
+      inode_ratio = atoi(optarg);
+      break;
+    case 'L':
+      label = optarg;
+      if (strlen(label) >= EXT4FS_LABEL_MAX)
+        errx(1, "label is too long (%d bytes max)", EXT4FS_LABEL_MAX);
+      break;
+    default: usage();
+    }
+  }
   if (argc != 2 || ! argv)
     errx(1, "invalid arguments");
   fd = open(argv[1], O_RDWR | O_EXCL);
@@ -158,7 +188,7 @@ int main (int argc, char **argv)
   sb->sb_max_mnt_count = htole16(20);
   sb->sb_mnt_count = htole16(0);
   strncpy(sb->sb_volume_name, "ext4 disk", sizeof(sb->sb_volume_name));
-  uuid_gen_v4(sb->sb_uuid);
+  uuid_v4_gen(sb->sb_uuid);
   printf("uuid: ");
   uuid_print(sb->sb_uuid);
   sb->sb_block_group_nr = htole16(0);

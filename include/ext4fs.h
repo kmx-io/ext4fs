@@ -23,6 +23,7 @@ typedef struct {
 
 #define EXT4FS_DYNAMIC_REV 1
 #define EXT4FS_DYNAMIC_REV_MINOR 0
+#define EXT4FS_LABEL_MAX 16
 #define EXT4FS_MAGIC 0xEF53
 #define EXT4FS_SUPER_BLOCK_OFFSET 1024
 #define EXT4FS_SUPER_BLOCK_SIZE 1024
@@ -121,7 +122,7 @@ struct ext4fs_super_block {
   uint32_t sb_feature_incompat;     // Incompatible feature set
   uint32_t sb_feature_ro_compat;    // Read-only compatible feature set
   uint8_t  sb_uuid[16];             // 128-bit filesystem UUID
-  char     sb_volume_name[16];
+  char     sb_volume_name[EXT4FS_LABEL_MAX];
   char     sb_last_mounted[64];     // Directory where last mounted
   uint32_t sb_algorithm_usage_bitmap; // For compression (unused)
 
