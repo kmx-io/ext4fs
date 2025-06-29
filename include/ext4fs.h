@@ -236,6 +236,12 @@ int ext4fs_block_bitmap (const struct ext4fs_super_block *sb,
 int ext4fs_block_size (const struct ext4fs_super_block *sb,
                        uint32_t *dest);
 
+int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
+                         uint64_t *dest);
+
+int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
+                              uint64_t *dest);
+
 struct ext4fs_group_desc *
 ext4fs_group_desc_read (struct ext4fs_group_desc *gd,
                         int fd,
@@ -255,6 +261,9 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
                                const struct ext4fs_group_desc *gd);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
+
+int ext4fs_reserved_blocks_count (const struct ext4fs_super_block *sb,
+                                  uint64_t *dest);
 
 int ext4fs_size (int fd, uint64_t *dest);
 

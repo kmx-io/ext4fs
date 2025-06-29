@@ -25,8 +25,8 @@
 
 #include <linux/fs.h>
 
-#include "../include/ext4fs.h"
-#include "../include/uuid.h"
+#include <ext4fs.h>
+#include <uuid.h>
 
 static char *progname = NULL;
 
@@ -60,8 +60,8 @@ void group_desc_init (struct ext4fs_group_desc *gd,
   gd->gd_used_dirs_count_hi = 0;
 }
 
-uint32_t * parse_opt_u32 (uint32_t *dest, const char *str,
-                          const char *optname)
+void parse_opt_u32 (uint32_t *dest, const char *str,
+                    const char *optname)
 {
   char *end = NULL;
   errno = 0;
@@ -71,7 +71,19 @@ uint32_t * parse_opt_u32 (uint32_t *dest, const char *str,
     usage();
   }
   *dest = (uint32_t) val;
-  return dest;
+}
+
+void parse_opt_u64 (uint64_t *dest, const char *str,
+                    const char *optname)
+{
+  char *end = NULL;
+  errno = 0;
+  unsigned long val = strtoul(str, &end, 0);
+  if (errno || *end != '\0') {
+    fprintf(stderr, "Invalid value for -%s: '%s'\n", optname, str);
+    usage();
+  }
+  *dest = val;
 }
 
 static void usage (void) {
@@ -87,10 +99,11 @@ int main (int argc, char **argv)
   uint32_t block_size = 4096;
   uint16_t blocks_free;
   uint32_t blocks_per_group;
-  uint64_t blocks_total;
+  uint64_t blocks_total = 0;
   uint64_t blocks_data;
   char *buffer = NULL;
   int c;
+  const char *device = NULL;
   ssize_t done;
   int fd;
   struct ext4fs_group_desc *gd;
@@ -118,27 +131,35 @@ int main (int argc, char **argv)
     progname = "newfs_ext4fs";
     usage();
   }
+  progname = argv[0];
   while ((c = getopt(argc, argv, "b:i:s:L:nvF")) != -1) {
     switch (c) {
     case 'b':
-      block_size = atoi(optarg);
+      parse_opt_u32(&block_size, optarg, "b");
       break;
     case 'i':
-      inode_ratio = atoi(optarg);
+      parse_opt_u32(&inode_ratio, optarg, "i");
+      break;
+    case 's':
+      parse_opt_u64(&blocks_total, optarg, "s");
       break;
     case 'L':
       label = optarg;
       if (strlen(label) >= EXT4FS_LABEL_MAX)
-        errx(1, "label is too long (%d bytes max)", EXT4FS_LABEL_MAX);
+        errx(1, "-L argument is too long (%d bytes max)",
+             EXT4FS_LABEL_MAX);
       break;
     default: usage();
     }
   }
-  if (argc != 2 || ! argv)
-    errx(1, "invalid arguments");
-  fd = open(argv[1], O_RDWR | O_EXCL);
+  if (optind >= argc) {
+    fprintf(stderr, "Missing device argument.\n");
+    usage();
+  }
+  device = argv[optind];
+  fd = open(device, O_RDWR | O_EXCL);
   if (fd < 0)
-    err(1, "open: %s", argv[1]);
+    err(1, "open: %s", device);
   if (ext4fs_size(fd, &size) ||
       ! size)
     err(1, "ext4fs_size");
@@ -149,25 +170,34 @@ int main (int argc, char **argv)
   if (! buffer)
     err(1, "calloc: %d", sb_size);
   inodes_total = size / inode_ratio;
-  blocks_total = (size - 1 + block_size) / block_size;
+  if (! blocks_total)
+    blocks_total = size / block_size;
   reserved_blocks = blocks_total / 20; // 5% reserved
   blocks_per_group = block_size * 8;
   inodes_per_group = inodes_total;
   inodes_reserved = 11;
   now = time(NULL);
-  sb = (struct ext4fs_super_block *) (buffer + EXT4FS_SUPER_BLOCK_OFFSET);
+  sb = (struct ext4fs_super_block *) (buffer +
+                                      EXT4FS_SUPER_BLOCK_OFFSET);
   sb->sb_magic = EXT4FS_MAGIC;
   sb->sb_inodes_count = htole32(inodes_total);
-  sb->sb_blocks_count_lo = htole32((uint32_t) (blocks_total & 0xFFFFFFFF));
+  sb->sb_blocks_count_lo = htole32((uint32_t)
+                                   (blocks_total & 0xFFFFFFFF));
   sb->sb_blocks_count_hi = htole32((uint32_t) (blocks_total >> 32));
-  sb->sb_reserved_blocks_count_lo = htole32((uint32_t) (reserved_blocks & 0xFFFFFFFF));
-  sb->sb_reserved_blocks_count_hi = htole32((uint32_t) (reserved_blocks >> 32));
-  sb->sb_free_blocks_count_lo = htole32(blocks_total - reserved_blocks - 16);
+  sb->sb_reserved_blocks_count_lo = htole32((uint32_t)
+                                            (reserved_blocks &
+                                             0xFFFFFFFF));
+  sb->sb_reserved_blocks_count_hi = htole32((uint32_t)
+                                            (reserved_blocks >> 32));
+  sb->sb_free_blocks_count_lo = htole32(blocks_total - reserved_blocks -
+                                        16);
   sb->sb_free_inodes_count = htole32(inodes_total - inodes_reserved);
   sb->sb_first_data_block = htole32(block_size > 1024 ? 0 : 1);
-  sb->sb_log_block_size = htole32(__builtin_ctz(block_size) - 10); // log2(block_size) - 10
+  // log2(block_size) - 10
+  sb->sb_log_block_size = htole32(__builtin_ctz(block_size) - 10);
   sb->sb_blocks_per_group = htole32(blocks_per_group);
-  sb->sb_inodes_per_group = htole32(inodes_per_group); // assuming 1 group for now
+  // assuming 1 group for now
+  sb->sb_inodes_per_group = htole32(inodes_per_group);
   sb->sb_inode_size = htole16(inode_size);
   sb->sb_first_ino = htole32(inodes_reserved); // first non-reserved inode
   sb->sb_state = htole16(EXT4FS_VALID_FS);
@@ -179,7 +209,8 @@ int main (int argc, char **argv)
   sb->sb_mkfs_time = htole32(now);
   sb->sb_lastcheck = htole32(now);
   sb->sb_checkinterval = htole32(6 * 30 * 24 * 60 * 60); // 6 months
-  sb->sb_feature_incompat = htole32(EXT4FS_FEATURE_INCOMPAT_EXTENTS);
+  sb->sb_feature_incompat = htole32(EXT4FS_FEATURE_INCOMPAT_EXTENTS |
+                                    EXT4FS_FEATURE_INCOMPAT_64BIT);
   sb->sb_feature_ro_compat = htole32(EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER);
   sb->sb_desc_size = htole16(64);
   sb->sb_creator_os = htole32(EXT4FS_OS_OPENBSD);
@@ -193,7 +224,7 @@ int main (int argc, char **argv)
   uuid_print(sb->sb_uuid);
   sb->sb_block_group_nr = htole16(0);
   printf("\n");
-  if (lseek(fd, EXT4FS_SUPER_BLOCK_OFFSET, SEEK_SET) < 0)
+  if (lseek(fd, 0, SEEK_SET) < 0)
     err(1, "lseek");
   done = 0;
   remaining = sb_size;

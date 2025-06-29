@@ -32,7 +32,7 @@ const s_enum ext4fs_feature_compat[] = {
   {EXT4FS_FEATURE_COMPAT_EXT_ATTR,      "ext_attr"},
   {EXT4FS_FEATURE_COMPAT_RESIZE_INODE,  "resize_inode"},
   {EXT4FS_FEATURE_COMPAT_DIR_INDEX,     "dir_index"},
-  {0,                                   NULL}
+  {0, NULL}
 };
 
 const s_enum ext4fs_feature_incompat[] = {
@@ -51,25 +51,25 @@ const s_enum ext4fs_feature_incompat[] = {
   {EXT4FS_FEATURE_INCOMPAT_LARGEDIR,    "largedir"},
   {EXT4FS_FEATURE_INCOMPAT_INLINE_DATA, "inline_data"},
   {EXT4FS_FEATURE_INCOMPAT_ENCRYPT,     "encrypt"},
-  {0,                                   NULL}
+  {0, NULL}
 };
 
 const s_enum ext4fs_feature_ro_compat[] = {
-  {EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER,  "sparse_super"},
-  {EXT4_FEATURE_RO_COMPAT_LARGE_FILE,    "large_file"},
-  {EXT4_FEATURE_RO_COMPAT_BTREE_DIR,     "btree_dir"},
-  {EXT4_FEATURE_RO_COMPAT_HUGE_FILE,     "huge_file"},
-  {EXT4_FEATURE_RO_COMPAT_GDT_CSUM,      "gdt_csum"},
-  {EXT4_FEATURE_RO_COMPAT_DIR_NLINK,     "dir_nlink"},
-  {EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE,   "extra_isize"},
-  {EXT4_FEATURE_RO_COMPAT_HAS_SNAPSHOT,  "has_snapshot"},
-  {EXT4_FEATURE_RO_COMPAT_QUOTA,         "quota"},
-  {EXT4_FEATURE_RO_COMPAT_BIGALLOC,      "bigalloc"},
-  {EXT4_FEATURE_RO_COMPAT_METADATA_CSUM, "metadata_csum"},
-  {EXT4_FEATURE_RO_COMPAT_REPLICA,       "replica"},
-  {EXT4_FEATURE_RO_COMPAT_READONLY,      "readonly"},
-  {EXT4_FEATURE_RO_COMPAT_PROJECT,       "project"},
-  {0,                                    NULL}
+  {EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER,  "sparse_super"},
+  {EXT4FS_FEATURE_RO_COMPAT_LARGE_FILE,    "large_file"},
+  {EXT4FS_FEATURE_RO_COMPAT_BTREE_DIR,     "btree_dir"},
+  {EXT4FS_FEATURE_RO_COMPAT_HUGE_FILE,     "huge_file"},
+  {EXT4FS_FEATURE_RO_COMPAT_GDT_CSUM,      "gdt_csum"},
+  {EXT4FS_FEATURE_RO_COMPAT_DIR_NLINK,     "dir_nlink"},
+  {EXT4FS_FEATURE_RO_COMPAT_EXTRA_ISIZE,   "extra_isize"},
+  {EXT4FS_FEATURE_RO_COMPAT_HAS_SNAPSHOT,  "has_snapshot"},
+  {EXT4FS_FEATURE_RO_COMPAT_QUOTA,         "quota"},
+  {EXT4FS_FEATURE_RO_COMPAT_BIGALLOC,      "bigalloc"},
+  {EXT4FS_FEATURE_RO_COMPAT_METADATA_CSUM, "metadata_csum"},
+  {EXT4FS_FEATURE_RO_COMPAT_REPLICA,       "replica"},
+  {EXT4FS_FEATURE_RO_COMPAT_READONLY,      "readonly"},
+  {EXT4FS_FEATURE_RO_COMPAT_PROJECT,       "project"},
+  {0, NULL}
 };
 
 int ext4fs_64bit (const struct ext4fs_super_block *sb)
@@ -125,6 +125,23 @@ int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
   *dest = le32toh(sb->sb_blocks_count_lo);
   if (ext4fs_64bit(sb))
     *dest |= ((uint64_t) le32toh(sb->sb_blocks_count_hi) << 32);
+  return 0;
+}
+
+int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
+                              uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_free_blocks_count: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_free_blocks_count: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_free_blocks_count_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= ((uint64_t) le32toh(sb->sb_free_blocks_count_hi) << 32);
   return 0;
 }
 
@@ -239,18 +256,24 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
 {
   uint64_t blocks_count;
+  uint64_t free_blocks_count;
+  uint64_t reserved_blocks_count;
   const s_enum *e;
   uint32_t feature;
   int first;
-  if (ext4fs_blocks_count(sb, &blocks_count))
+  if (ext4fs_blocks_count(sb, &blocks_count) ||
+      ext4fs_reserved_blocks_count(sb, &reserved_blocks_count) ||
+      ext4fs_free_blocks_count(sb, &free_blocks_count))
     return -1;
-  printf("%%Ext4fs.SuperBlock{sb_inodes_count: %u,\n"
-         "                   sb_blocks_count: %lu,\n"
-         "                   sb_rev_level: %u,\n"
-         "                   sb_rev_level_minor: %u,\n"
+  printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
+         "                   sb_blocks_count: (U64) %lu,\n"
+         "                   sb_reserved_blocks_count: (U64) %lu,\n"
+         "                   sb_free_blocks_count: (U64) %lu,\n"
+         "                   sb_rev_level: (U32) %u,\n"
+         "                   sb_rev_level_minor: (U16) %u,\n"
          "                   sb_feature_compat: ",
          le32toh(sb->sb_inodes_count),
-         blocks_count,
+         blocks_count, reserved_blocks_count, free_blocks_count,
          le32toh(sb->sb_rev_level),
          le32toh(sb->sb_rev_level_minor));
   feature = le32toh(sb->sb_feature_compat);
@@ -297,6 +320,23 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
     e++;
   }
   printf("}\n");
+  return 0;
+}
+
+int ext4fs_reserved_blocks_count (const struct ext4fs_super_block *sb,
+                                  uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_reserved_blocks_count: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_reserved_blocks_count: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_reserved_blocks_count_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= ((uint64_t) le32toh(sb->sb_reserved_blocks_count_hi) << 32);
   return 0;
 }
 

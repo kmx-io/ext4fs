@@ -24,6 +24,7 @@
 #include <linux/fs.h>
 
 #include <ext4fs.h>
+#include <uuid.h>
 
 int main (int argc, char **argv)
 {

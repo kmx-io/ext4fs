@@ -12,7 +12,7 @@
  */
 #include <stdio.h>
 
-#include "../include/uuid.h"
+#include <uuid.h>
 
 void arc4random_buf(void *buf, size_t n);
 
@@ -28,6 +28,6 @@ void uuid_print(const uint8_t uuid[16]) {
 
 void uuid_v4_gen(uint8_t uuid[16]) {
   arc4random_buf(uuid, 16);
-  uuid[6] = (uuid[6] & 0x0F) | 0x40; // Set UUID version to 4 (0100xxxx)
-  uuid[8] = (uuid[8] & 0x3F) | 0x80; // Set UUID variant to RFC 4122 (10xxxxxx)
+  uuid[6] = (uuid[6] & 0x0F) | 0x40; // version 4 (0100xxxx)
+  uuid[8] = (uuid[8] & 0x3F) | 0x80; // RFC 4122  (10xxxxxx)
 }
