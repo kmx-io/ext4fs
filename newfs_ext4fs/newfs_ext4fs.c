@@ -1,4 +1,4 @@
-/* kc3
+/* ext4fs
  * Copyright 2025 kmx.io <contact@kmx.io>
  *
  * Permission is hereby granted to use this software granted the above
@@ -130,8 +130,8 @@ int main (int argc, char **argv)
   sb->sb_inodes_count = htole32(inodes_total);
   sb->sb_blocks_count_lo = htole32((uint32_t) (blocks_total & 0xFFFFFFFF));
   sb->sb_blocks_count_hi = htole32((uint32_t) (blocks_total >> 32));
-  sb->sb_r_blocks_count_lo = htole32((uint32_t) (reserved_blocks & 0xFFFFFFFF));
-  sb->sb_r_blocks_count_hi = htole32((uint32_t) (reserved_blocks >> 32));
+  sb->sb_reserved_blocks_count_lo = htole32((uint32_t) (reserved_blocks & 0xFFFFFFFF));
+  sb->sb_reserved_blocks_count_hi = htole32((uint32_t) (reserved_blocks >> 32));
   sb->sb_free_blocks_count_lo = htole32(blocks_total - reserved_blocks - 16);
   sb->sb_free_inodes_count = htole32(inodes_total - inodes_reserved);
   sb->sb_first_data_block = htole32(block_size > 1024 ? 0 : 1);
@@ -143,7 +143,7 @@ int main (int argc, char **argv)
   sb->sb_state = htole16(EXT4FS_VALID_FS);
   sb->sb_errors = htole16(EXT4FS_ERRORS_CONTINUE);
   sb->sb_rev_level = htole32(EXT4FS_DYNAMIC_REV);
-  sb->sb_minor_rev_level = htole16(EXT4FS_DYNAMIC_REV_MINOR);
+  sb->sb_rev_level_minor = htole16(EXT4FS_DYNAMIC_REV_MINOR);
   sb->sb_mtime = htole32(now);
   sb->sb_wtime = htole32(now);
   sb->sb_mkfs_time = htole32(now);

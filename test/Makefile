@@ -10,12 +10,20 @@
 ## AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
 ## THIS SOFTWARE.
 
-all: build test
+PROG =    ext4fs_test
+HEADERS = ../include/ext4fs.h
+SOURCES = ext4fs_test.c ../ext4fs.c
+OBJECTS = ext4fs_test.o ../ext4fs.o
 
-build:
-	${MAKE} -C inspect_ext4fs build
-	${MAKE} -C newfs_ext4fs build
-	${MAKE} -C test build
+CPPFLAGS = -I../include
+CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
+
+all: build
+
+build: ${PROG}
+
+${PROG}: ${OBJECTS} ${HEADERS}
+	${CC} ${CFLAGS} ${LDFLAGS} ${OBJECTS} -o ${PROG}
 
 test: build
-	${MAKE} -C test test
+	./${PROG}

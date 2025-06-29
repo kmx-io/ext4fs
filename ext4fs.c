@@ -25,6 +25,59 @@
 
 #include <ext4fs.h>
 
+const s_enum ext4fs_feature_compat[] = {
+  {EXT4FS_FEATURE_COMPAT_DIR_PREALLOC,  "dir_prealloc"},
+  {EXT4FS_FEATURE_COMPAT_IMAGIC_INODES, "imagic_inodes"},
+  {EXT4FS_FEATURE_COMPAT_HAS_JOURNAL,   "has_journal"},
+  {EXT4FS_FEATURE_COMPAT_EXT_ATTR,      "ext_attr"},
+  {EXT4FS_FEATURE_COMPAT_RESIZE_INODE,  "resize_inode"},
+  {EXT4FS_FEATURE_COMPAT_DIR_INDEX,     "dir_index"},
+  {0,                                   NULL}
+};
+
+const s_enum ext4fs_feature_incompat[] = {
+  {EXT4FS_FEATURE_INCOMPAT_COMPRESSION, "compression"},
+  {EXT4FS_FEATURE_INCOMPAT_FILETYPE,    "filetype"},
+  {EXT4FS_FEATURE_INCOMPAT_RECOVER,     "recover"},
+  {EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV, "journal_dev"},
+  {EXT4FS_FEATURE_INCOMPAT_META_BG,     "meta_bg"},
+  {EXT4FS_FEATURE_INCOMPAT_EXTENTS,     "extents"},
+  {EXT4FS_FEATURE_INCOMPAT_64BIT,       "64bit"},
+  {EXT4FS_FEATURE_INCOMPAT_MMP,         "mmp"},
+  {EXT4FS_FEATURE_INCOMPAT_FLEX_BG,     "flex_bg"},
+  {EXT4FS_FEATURE_INCOMPAT_EA_INODE,    "ea_inode"},
+  {EXT4FS_FEATURE_INCOMPAT_DIRDATA,     "dirdata"},
+  {EXT4FS_FEATURE_INCOMPAT_CSUM_SEED,   "csum_seed"},
+  {EXT4FS_FEATURE_INCOMPAT_LARGEDIR,    "largedir"},
+  {EXT4FS_FEATURE_INCOMPAT_INLINE_DATA, "inline_data"},
+  {EXT4FS_FEATURE_INCOMPAT_ENCRYPT,     "encrypt"},
+  {0,                                   NULL}
+};
+
+const s_enum ext4fs_feature_ro_compat[] = {
+  {EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER,  "sparse_super"},
+  {EXT4_FEATURE_RO_COMPAT_LARGE_FILE,    "large_file"},
+  {EXT4_FEATURE_RO_COMPAT_BTREE_DIR,     "btree_dir"},
+  {EXT4_FEATURE_RO_COMPAT_HUGE_FILE,     "huge_file"},
+  {EXT4_FEATURE_RO_COMPAT_GDT_CSUM,      "gdt_csum"},
+  {EXT4_FEATURE_RO_COMPAT_DIR_NLINK,     "dir_nlink"},
+  {EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE,   "extra_isize"},
+  {EXT4_FEATURE_RO_COMPAT_HAS_SNAPSHOT,  "has_snapshot"},
+  {EXT4_FEATURE_RO_COMPAT_QUOTA,         "quota"},
+  {EXT4_FEATURE_RO_COMPAT_BIGALLOC,      "bigalloc"},
+  {EXT4_FEATURE_RO_COMPAT_METADATA_CSUM, "metadata_csum"},
+  {EXT4_FEATURE_RO_COMPAT_REPLICA,       "replica"},
+  {EXT4_FEATURE_RO_COMPAT_READONLY,      "readonly"},
+  {EXT4_FEATURE_RO_COMPAT_PROJECT,       "project"},
+  {0,                                    NULL}
+};
+
+int ext4fs_64bit (const struct ext4fs_super_block *sb)
+{
+  return (le32toh(sb->sb_feature_incompat) &
+          EXT4FS_FEATURE_INCOMPAT_64BIT) ? 1 : 0;
+}
+
 int ext4fs_block_bitmap (const struct ext4fs_super_block *sb,
                          const struct ext4fs_group_desc *gd,
                          uint64_t *dest)
@@ -38,7 +91,7 @@ int ext4fs_block_bitmap (const struct ext4fs_super_block *sb,
     return -1;
   }
   *dest = le32toh(gd->gd_block_bitmap_lo);
-  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_64BIT)
+  if (ext4fs_64bit(sb))
     *dest |= ((uint64_t) le32toh(gd->gd_block_bitmap_hi) << 32);
   return 0;
 }
@@ -70,7 +123,7 @@ int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
     return -1;
   }
   *dest = le32toh(sb->sb_blocks_count_lo);
-  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_64BIT)
+  if (ext4fs_64bit(sb))
     *dest |= ((uint64_t) le32toh(sb->sb_blocks_count_hi) << 32);
   return 0;
 }
@@ -120,7 +173,7 @@ int ext4fs_inode_bitmap (const struct ext4fs_super_block *sb,
     return -1;
   }
   *dest = le32toh(gd->gd_inode_bitmap_lo);
-  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_64BIT)
+  if (ext4fs_64bit(sb))
     *dest |= ((uint64_t) le32toh(gd->gd_inode_bitmap_hi) << 32);
   return 0;
 }
@@ -138,7 +191,7 @@ int ext4fs_inode_table (const struct ext4fs_super_block *sb,
     return -1;
   }
   *dest = le32toh(gd->gd_inode_table_lo);
-  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_64BIT)
+  if (ext4fs_64bit(sb))
     *dest |= ((uint64_t) le32toh(gd->gd_inode_table_hi) << 32);
   return 0;
 }
@@ -175,8 +228,8 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
       ext4fs_inode_table(sb, gd, &inode_table))
     return -1;
   printf("%%Ext4fs.GroupDesc{gd_block_bitmap: %lu,\n"
-         "                   gd_inode_bitmap: %lu,\n"
-         "                   gd_inode_table: %lu}\n",
+         "                  gd_inode_bitmap: %lu,\n"
+         "                  gd_inode_table: %lu}\n",
          block_bitmap,
          inode_bitmap,
          inode_table);
@@ -186,7 +239,8 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
 {
   uint64_t blocks_count;
-  s_enum *e;
+  const s_enum *e;
+  uint32_t feature;
   int first;
   if (ext4fs_blocks_count(sb, &blocks_count))
     return -1;
@@ -199,10 +253,11 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          blocks_count,
          le32toh(sb->sb_rev_level),
          le32toh(sb->sb_rev_level_minor));
+  feature = le32toh(sb->sb_feature_compat);
   e = ext4fs_feature_compat;
   first = 1;
   while (e->name) {
-    if (sb->sb_feature_compat & e->value) {
+    if (feature & e->value) {
       if (! first)
         printf("|");
       else
@@ -213,10 +268,11 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   }
   printf(",\n"
          "                   sb_feature_incompat: ");
+  feature = le32toh(sb->sb_feature_incompat);
   e = ext4fs_feature_incompat;
   first = 1;
   while (e->name) {
-    if (sb->sb_feature_incompat & e->value) {
+    if (feature & e->value) {
       if (! first)
         printf("|");
       else
@@ -227,10 +283,11 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   }
   printf(",\n"
          "                   sb_feature_ro_compat: ");
+  feature = le32toh(sb->sb_feature_ro_compat);
   e = ext4fs_feature_ro_compat;
   first = 1;
   while (e->name) {
-    if (sb->sb_feature_ro_compat & e->value) {
+    if (feature & e->value) {
       if (! first)
         printf("|");
       else

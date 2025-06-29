@@ -1,2 +1,3 @@
 inspect_ext4fs/inspect_ext4fs
 newfs_ext4fs/newfs_ext4fs
+test/ext4fs_test

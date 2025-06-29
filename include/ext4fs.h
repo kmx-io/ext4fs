@@ -13,6 +13,7 @@
 #ifndef EXT4FS_H
 #define EXT4FS_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct {
@@ -36,15 +37,7 @@ typedef struct {
 #define EXT4FS_FEATURE_COMPAT_RESIZE_INODE   0x0010
 #define EXT4FS_FEATURE_COMPAT_DIR_INDEX      0x0020
 
-s_enum ext4fs_feature_compat[] = {
-  {EXT4FS_FEATURE_COMPAT_DIR_PREALLOC,  "dir_prealloc"},
-  {EXT4FS_FEATURE_COMPAT_IMAGIC_INODES, "imagic_inodes"},
-  {EXT4FS_FEATURE_COMPAT_HAS_JOURNAL,   "has_journal"},
-  {EXT4FS_FEATURE_COMPAT_EXT_ATTR,      "ext_attr"},
-  {EXT4FS_FEATURE_COMPAT_RESIZE_INODE,  "resize_inode"},
-  {EXT4FS_FEATURE_COMPAT_DIR_INDEX,     "dir_index"},
-  {0,                                   NULL}
-};
+extern const s_enum ext4fs_feature_compat[];
 
 #define EXT4FS_FEATURE_INCOMPAT_COMPRESSION  0x00001 // Not used in ext4
 #define EXT4FS_FEATURE_INCOMPAT_FILETYPE     0x00002 // Directory entry has type
@@ -62,57 +55,24 @@ s_enum ext4fs_feature_compat[] = {
 #define EXT4FS_FEATURE_INCOMPAT_INLINE_DATA  0x08000 // Inline file data
 #define EXT4FS_FEATURE_INCOMPAT_ENCRYPT      0x10000 // File encryption
 
-s_enum ext4fs_feature_incompat[] = {
-  {EXT4FS_FEATURE_INCOMPAT_COMPRESSION, "compression"},
-  {EXT4FS_FEATURE_INCOMPAT_FILETYPE,    "filetype"},
-  {EXT4FS_FEATURE_INCOMPAT_RECOVER,     "recover"},
-  {EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV, "journal_dev"},
-  {EXT4FS_FEATURE_INCOMPAT_META_BG,     "meta_bg"},
-  {EXT4FS_FEATURE_INCOMPAT_EXTENTS,     "extents"},
-  {EXT4FS_FEATURE_INCOMPAT_64BIT,       "64bit"},
-  {EXT4FS_FEATURE_INCOMPAT_MMP,         "mmp"},
-  {EXT4FS_FEATURE_INCOMPAT_FLEX_BG,     "flex_bg"},
-  {EXT4FS_FEATURE_INCOMPAT_EA_INODE,    "ea_inode"},
-  {EXT4FS_FEATURE_INCOMPAT_DIRDATA,     "dirdata"},
-  {EXT4FS_FEATURE_INCOMPAT_CSUM_SEED,   "csum_seed"},
-  {EXT4FS_FEATURE_INCOMPAT_LARGEDIR,    "largedir"},
-  {EXT4FS_FEATURE_INCOMPAT_INLINE_DATA, "inline_data"},
-  {EXT4FS_FEATURE_INCOMPAT_ENCRYPT,     "encrypt"},
-  {0,                                   NULL}
-};
+extern const s_enum ext4fs_feature_incompat[];
 
-#define EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER   0x0001
-#define EXT4_FEATURE_RO_COMPAT_LARGE_FILE     0x0002
-#define EXT4_FEATURE_RO_COMPAT_BTREE_DIR      0x0004  // Not used in ext4
-#define EXT4_FEATURE_RO_COMPAT_HUGE_FILE      0x0008
-#define EXT4_FEATURE_RO_COMPAT_GDT_CSUM       0x0010
-#define EXT4_FEATURE_RO_COMPAT_DIR_NLINK      0x0020
-#define EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE    0x0040
-#define EXT4_FEATURE_RO_COMPAT_HAS_SNAPSHOT   0x0080  // Unused
-#define EXT4_FEATURE_RO_COMPAT_QUOTA          0x0100
-#define EXT4_FEATURE_RO_COMPAT_BIGALLOC       0x0200
-#define EXT4_FEATURE_RO_COMPAT_METADATA_CSUM  0x0400
-#define EXT4_FEATURE_RO_COMPAT_REPLICA        0x0800  // Unused
-#define EXT4_FEATURE_RO_COMPAT_READONLY       0x1000
-#define EXT4_FEATURE_RO_COMPAT_PROJECT        0x2000
+#define EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER   0x0001
+#define EXT4FS_FEATURE_RO_COMPAT_LARGE_FILE     0x0002
+#define EXT4FS_FEATURE_RO_COMPAT_BTREE_DIR      0x0004  // Not used in ext4
+#define EXT4FS_FEATURE_RO_COMPAT_HUGE_FILE      0x0008
+#define EXT4FS_FEATURE_RO_COMPAT_GDT_CSUM       0x0010
+#define EXT4FS_FEATURE_RO_COMPAT_DIR_NLINK      0x0020
+#define EXT4FS_FEATURE_RO_COMPAT_EXTRA_ISIZE    0x0040
+#define EXT4FS_FEATURE_RO_COMPAT_HAS_SNAPSHOT   0x0080  // Unused
+#define EXT4FS_FEATURE_RO_COMPAT_QUOTA          0x0100
+#define EXT4FS_FEATURE_RO_COMPAT_BIGALLOC       0x0200
+#define EXT4FS_FEATURE_RO_COMPAT_METADATA_CSUM  0x0400
+#define EXT4FS_FEATURE_RO_COMPAT_REPLICA        0x0800  // Unused
+#define EXT4FS_FEATURE_RO_COMPAT_READONLY       0x1000
+#define EXT4FS_FEATURE_RO_COMPAT_PROJECT        0x2000
 
-s_enum ext4fs_feature_ro_compat[] = {
-  {EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER,  "sparse_super"},
-  {EXT4_FEATURE_RO_COMPAT_LARGE_FILE,    "large_file"},
-  {EXT4_FEATURE_RO_COMPAT_BTREE_DIR,     "btree_dir"},
-  {EXT4_FEATURE_RO_COMPAT_HUGE_FILE,     "huge_file"},
-  {EXT4_FEATURE_RO_COMPAT_GDT_CSUM,      "gdt_csum"},
-  {EXT4_FEATURE_RO_COMPAT_DIR_NLINK,     "dir_nlink"},
-  {EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE,   "extra_isize"},
-  {EXT4_FEATURE_RO_COMPAT_HAS_SNAPSHOT,  "has_snapshot"},
-  {EXT4_FEATURE_RO_COMPAT_QUOTA,         "quota"},
-  {EXT4_FEATURE_RO_COMPAT_BIGALLOC,      "bigalloc"},
-  {EXT4_FEATURE_RO_COMPAT_METADATA_CSUM, "metadata_csum"},
-  {EXT4_FEATURE_RO_COMPAT_REPLICA,       "replica"},
-  {EXT4_FEATURE_RO_COMPAT_READONLY,      "readonly"},
-  {EXT4_FEATURE_RO_COMPAT_PROJECT,       "project"},
-  {0,                                    NULL}
-};
+extern const s_enum ext4fs_feature_ro_compat[];
 
 #define EXT4FS_OS_LINUX     0
 #define EXT4FS_OS_HURD      1
@@ -122,113 +82,124 @@ s_enum ext4fs_feature_ro_compat[] = {
 #define EXT4FS_OS_OPENBSD   5
 
 struct ext4fs_super_block {
-    uint32_t sb_inodes_count;
-    uint32_t sb_blocks_count_lo;
-    uint32_t sb_reserved_blocks_count_lo;
-    uint32_t sb_free_blocks_count_lo;
-    uint32_t sb_free_inodes_count;
-    uint32_t sb_first_data_block;
-    uint32_t sb_log_block_size;       // log2(block size) - 10
-    uint32_t sb_log_cluster_size;     // log2(cluster size) - 10
-    uint32_t sb_blocks_per_group;
-    uint32_t sb_clusters_per_group;
-    uint32_t sb_inodes_per_group;
-    uint32_t sb_mtime;                // Mount time
-    uint32_t sb_wtime;                // Write time
-    uint16_t sb_mnt_count;            // Mount count
-    uint16_t sb_max_mnt_count;        // Max mount count before fsck
-    uint16_t sb_magic;                // Magic signature
-    uint16_t sb_state;                // File system state
-    uint16_t sb_errors;               // Behaviour when detecting errors
-    uint16_t sb_rev_level_minor;      // Minor revision level
-    uint32_t sb_lastcheck;            // Last check time
-    uint32_t sb_checkinterval;        // Max time between checks
-    uint32_t sb_creator_os;           // OS
-    uint32_t sb_rev_level;            // Revision level
-    uint16_t sb_def_resuid;           // Default uid for reserved blocks
-    uint16_t sb_def_resgid;           // Default gid for reserved blocks
+  uint32_t sb_inodes_count;
+  uint32_t sb_blocks_count_lo;
+  uint32_t sb_reserved_blocks_count_lo;
+  uint32_t sb_free_blocks_count_lo;
 
-    // EXT4_DYNAMIC_REV Specific:
-    uint32_t sb_first_ino;            // First non-reserved inode
-    uint16_t sb_inode_size;           // Inode size
-    uint16_t sb_block_group_nr;       // Block group # of this superblock
-    uint32_t sb_feature_compat;       // Compatible feature set
-    uint32_t sb_feature_incompat;     // Incompatible feature set
-    uint32_t sb_feature_ro_compat;    // Read-only compatible feature set
-    uint8_t  sb_uuid[16];             // 128-bit filesystem UUID
-    char     sb_volume_name[16];      // Volume name
-    char     sb_last_mounted[64];     // Directory where last mounted
-    uint32_t sb_algorithm_usage_bitmap; // For compression (unused)
+  uint32_t sb_free_inodes_count;
+  uint32_t sb_first_data_block;
+  uint32_t sb_log_block_size;       // log2(block size) - 10
+  uint32_t sb_log_cluster_size;     // log2(cluster size) - 10
 
-    // Journaling support:
-    uint8_t  sb_journal_uuid[16];     // UUID of journal superblock
-    uint32_t sb_journal_inum;         // Inode number of journal file
-    uint32_t sb_journal_dev;          // Device number of journal file
-    uint32_t sb_last_orphan;          // Start of orphan inode list
+  uint32_t sb_blocks_per_group;
+  uint32_t sb_clusters_per_group;
+  uint32_t sb_inodes_per_group;
+  uint32_t sb_mtime;                // Mount time
 
-    uint32_t sb_hash_seed[4];         // HTREE hash seed
-    uint8_t  sb_def_hash_version;     // Default hash version
-    uint8_t  sb_jnl_backup_type;
-    uint16_t sb_desc_size;            // Group descriptor size
-    uint32_t sb_default_mount_opts;
-    uint32_t sb_first_meta_bg;        // First metablock block group
-    uint32_t sb_mkfs_time;            // When the FS was created
-    uint32_t sb_jnl_blocks[17];       // Backup of journal inode
+  uint32_t sb_wtime;                // Write time
+  uint16_t sb_mnt_count;            // Mount count
+  uint16_t sb_max_mnt_count;        // Max mount count before fsck
+  uint16_t sb_magic;                // Magic signature
+  uint16_t sb_state;                // File system state
+  uint16_t sb_errors;               // Behaviour when detecting errors
+  uint16_t sb_rev_level_minor;      // Minor revision level
 
-    // 64-bit support:
-    uint32_t sb_blocks_count_hi;
-    uint32_t sb_reserved_blocks_count_hi;
-    uint32_t sb_free_blocks_count_hi;
-    uint16_t sb_min_extra_isize;
-    uint16_t sb_want_extra_isize;
-    uint32_t sb_flags;
-    uint16_t sb_raid_stride;
-    uint16_t sb_mmp_interval;
-    uint64_t sb_mmp_block;
-    uint32_t sb_raid_stripe_width;
-    uint8_t  sb_log_groups_per_flex;
-    uint8_t  sb_checksum_type;
-    uint16_t sb_reserved_pad;
-    uint64_t sb_kbytes_written;
-    uint32_t sb_snapshot_inum;
-    uint32_t sb_snapshot_id;
-    uint64_t sb_snapshot_r_blocks_count;
-    uint32_t sb_snapshot_list;
+  uint32_t sb_lastcheck;            // Last check time
+  uint32_t sb_checkinterval;        // Max time between checks
+  uint32_t sb_creator_os;           // OS
+  uint32_t sb_rev_level;            // Revision level
 
-    // Error handling:
-    uint32_t sb_error_count;
-    uint32_t sb_first_error_time;
-    uint32_t sb_first_error_ino;
-    uint64_t sb_first_error_block;
-    uint8_t  sb_first_error_func[32];
-    uint32_t sb_first_error_line;
-    uint32_t sb_last_error_time;
-    uint32_t sb_last_error_ino;
-    uint32_t sb_last_error_line;
-    uint64_t sb_last_error_block;
-    uint8_t  sb_last_error_func[32];
+  uint16_t sb_def_resuid;           // Default uid for reserved blocks
+  uint16_t sb_def_resgid;           // Default gid for reserved blocks
 
-    uint8_t  sb_mount_opts[64];
-    uint32_t sb_usr_quota_inum;
-    uint32_t sb_grp_quota_inum;
-    uint32_t sb_overhead_blocks;
-    uint32_t sb_backup_bgs[2];
-    uint8_t  sb_encrypt_algos[4];
-    uint8_t  sb_encrypt_pw_salt[16];
-    uint32_t sb_lpf_ino;
-    uint32_t sb_prj_quota_inum;
-    uint32_t sb_checksum_seed;
+  uint32_t sb_first_ino;            // First non-reserved inode
+  uint16_t sb_inode_size;           // Inode size
+  uint16_t sb_block_group_nr;       // Block group # of this superblock
+  uint32_t sb_feature_compat;       // Compatible feature set
 
-    uint8_t  sb_wtime_hi;
-    uint8_t  sb_mtime_hi;
-    uint8_t  sb_mkfs_time_hi;
-    uint8_t  sb_lastcheck_hi;
-    uint8_t  sb_first_error_time_hi;
-    uint8_t  sb_last_error_time_hi;
-    uint8_t  sb_pad[2];
-    uint32_t sb_reserved[96];
+  uint32_t sb_feature_incompat;     // Incompatible feature set
+  uint32_t sb_feature_ro_compat;    // Read-only compatible feature set
+  uint8_t  sb_uuid[16];             // 128-bit filesystem UUID
+  char     sb_volume_name[16];
+  char     sb_last_mounted[64];     // Directory where last mounted
+  uint32_t sb_algorithm_usage_bitmap; // For compression (unused)
 
-    uint32_t sb_checksum;             // Superblock checksum
+  uint8_t  sb_prealloc_blocks;      // Blocks to preallocate
+  uint8_t  sb_prealloc_dir_blocks;  // Blocks to preallocate for dirs
+  uint16_t sb_reserved_gdt_blocks;  // Per group desc for online growth
+
+  uint8_t  sb_journal_uuid[16];     // UUID of journal superblock
+
+  uint32_t sb_journal_inum;         // Inode number of journal file
+  uint32_t sb_journal_dev;          // Device number of journal file
+  uint32_t sb_last_orphan;          // Start of orphan inode list
+  uint32_t sb_hash_seed[4];         // HTREE hash seed
+  uint8_t  sb_def_hash_version;     // Default hash version
+  uint8_t  sb_jnl_backup_type;
+  uint16_t sb_desc_size;            // Group descriptor size
+
+  uint32_t sb_default_mount_opts;
+  uint32_t sb_first_meta_bg;        // First metablock block group
+  uint32_t sb_mkfs_time;            // When the FS was created
+  uint32_t sb_jnl_blocks[17];       // Backup of journal inode
+
+  uint32_t sb_blocks_count_hi;
+  uint32_t sb_reserved_blocks_count_hi;
+  uint32_t sb_free_blocks_count_hi;
+  uint16_t sb_min_extra_isize;
+  uint16_t sb_want_extra_isize;
+
+  uint32_t sb_flags;
+  uint16_t sb_raid_stride;
+  uint16_t sb_mmp_interval;
+  uint64_t sb_mmp_block;
+  
+  uint32_t sb_raid_stripe_width;
+  uint8_t  sb_log_groups_per_flex;
+  uint8_t  sb_checksum_type;
+  uint16_t sb_reserved_pad;
+  uint64_t sb_kbytes_written;
+
+  uint32_t sb_snapshot_inum;
+  uint32_t sb_snapshot_id;  
+  uint64_t sb_snapshot_r_blocks_count;
+
+  uint32_t sb_snapshot_list;
+  uint32_t sb_error_count;
+  uint32_t sb_first_error_time;
+  uint32_t sb_first_error_ino;
+
+  uint64_t sb_first_error_block;
+  uint8_t  sb_first_error_func[32];
+  uint32_t sb_first_error_line;
+  uint32_t sb_last_error_time;
+  uint32_t sb_last_error_ino;
+  uint32_t sb_last_error_line;
+  uint64_t sb_last_error_block;
+  uint8_t  sb_last_error_func[32];
+
+  uint8_t  sb_mount_opts[64];
+  uint32_t sb_usr_quota_inum;
+  uint32_t sb_grp_quota_inum;
+  uint32_t sb_overhead_blocks;
+  uint32_t sb_backup_bgs[2];
+  uint8_t  sb_encrypt_algos[4];
+  uint8_t  sb_encrypt_pw_salt[16];
+  uint32_t sb_lpf_ino;
+  uint32_t sb_prj_quota_inum;
+  uint32_t sb_checksum_seed;
+
+  uint8_t  sb_wtime_hi;
+  uint8_t  sb_mtime_hi;
+  uint8_t  sb_mkfs_time_hi;
+  uint8_t  sb_lastcheck_hi;
+  uint8_t  sb_first_error_time_hi;
+  uint8_t  sb_last_error_time_hi;
+  uint8_t  sb_pad[2];
+  uint32_t sb_reserved[96];
+
+  uint32_t sb_checksum;             // Superblock checksum
 } __attribute__((packed));
 
 struct ext4fs_group_desc {
