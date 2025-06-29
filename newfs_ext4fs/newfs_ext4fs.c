@@ -88,14 +88,16 @@ void parse_opt_u64 (uint64_t *dest, const char *str,
 
 static void usage (void) {
   fprintf(stderr,
-          "Usage: %s [-b block-size] [-i bytes-per-inode] [-s size-in-blocks]\n"
-          "  [-L label] [-n] [-v] [-F] device\n", progname);
+          "Usage: %s [-b block-size] [-i bytes-per-inode]\n"
+          "  [-s size-in-blocks] [-L label] [-n] [-v] [-F]\n"
+          "  device\n", progname);
   exit(1);
 }
 
 int main (int argc, char **argv)
 {
   uint32_t block_bitmap_block;
+  uint32_t block_groups_count;
   uint32_t block_size = 4096;
   uint16_t blocks_free;
   uint32_t blocks_per_group;
@@ -106,9 +108,10 @@ int main (int argc, char **argv)
   const char *device = NULL;
   ssize_t done;
   int fd;
-  struct ext4fs_group_desc *gd;
-  uint32_t                  gd_offset;
-  uint32_t                  gd_size;
+  const uint32_t            gd_size = sizeof(struct ext4fs_group_desc);
+  struct ext4fs_group_desc *gdt;
+  uint32_t                  gdt_offset;
+  uint32_t                  gdt_size;
   uint32_t inode_bitmap_block;
   uint32_t inode_ratio = 16384; // One inode per 16 KB
   uint32_t inode_size = 256;
@@ -174,7 +177,9 @@ int main (int argc, char **argv)
     blocks_total = size / block_size;
   reserved_blocks = blocks_total / 20; // 5% reserved
   blocks_per_group = block_size * 8;
-  inodes_per_group = inodes_total;
+  block_groups_count = (blocks_total + (blocks_per_group - 1)) /
+    blocks_per_group;
+  inodes_per_group = (blocks_per_group * block_size) / inode_ratio;
   inodes_reserved = 11;
   now = time(NULL);
   sb = (struct ext4fs_super_block *) (buffer +
@@ -212,7 +217,7 @@ int main (int argc, char **argv)
   sb->sb_feature_incompat = htole32(EXT4FS_FEATURE_INCOMPAT_EXTENTS |
                                     EXT4FS_FEATURE_INCOMPAT_64BIT);
   sb->sb_feature_ro_compat = htole32(EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER);
-  sb->sb_desc_size = htole16(64);
+  sb->sb_desc_size = htole16(gd_size);
   sb->sb_creator_os = htole32(EXT4FS_OS_OPENBSD);
   sb->sb_def_resuid = htole16(0);
   sb->sb_def_resgid = htole16(0);
@@ -236,23 +241,26 @@ int main (int argc, char **argv)
     remaining -= w;
   }
   free(buffer);
-  gd_offset = sb_size;
-  gd_size = (64 + (block_size - 1)) / block_size * block_size;
-  buffer = calloc(1, gd_size);
+  gdt_offset = sb_size;
+  gdt_size = (gd_size * block_groups_count + (block_size - 1)) /
+    block_size * block_size;
+  buffer = calloc(1, gdt_size);
   if (! buffer)
-    err(1, "calloc: %d", gd_size);
-  block_bitmap_block = (gd_offset + gd_size) / block_size;
+    err(1, "calloc: %d", gdt_size);
+  block_bitmap_block = (gdt_offset + gdt_size) / block_size;
   inode_bitmap_block = block_bitmap_block + 1;
   inode_table_start = inode_bitmap_block + 1;
   inode_table_blocks = (inodes_per_group * inode_size +
                         (block_size - 1)) / block_size;
   inodes_free = inodes_total - inodes_reserved;
   blocks_data = 1;
-  blocks_free = blocks_per_group - (1 + 1 + inode_table_blocks + blocks_data);
+  blocks_free = blocks_per_group -
+    (2 + inode_table_blocks + blocks_data);
   used_dirs = 1;
-  gd = (struct ext4fs_group_desc *) buffer;
-  group_desc_init(gd, block_bitmap_block, inode_bitmap_block,
-                  inode_table_start, blocks_free, inodes_free, used_dirs);
+  gdt = (struct ext4fs_group_desc *) buffer;
+  group_desc_init(gdt, block_bitmap_block, inode_bitmap_block,
+                  inode_table_start, blocks_free, inodes_free,
+                  used_dirs);
   done = 0;
   remaining = gd_size;
   while (remaining > 0) {
