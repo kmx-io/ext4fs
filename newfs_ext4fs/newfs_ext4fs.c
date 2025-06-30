@@ -231,13 +231,13 @@ int main (int argc, char **argv)
   sb->sb_block_group_id = htole16(0);
   printf("\n");
   if (lseek(fd, 0, SEEK_SET) < 0)
-    err(1, "lseek");
+    err(1, "lseek(fd, 0, SEEK_SET)");
   done = 0;
   remaining = sb_size;
   while (remaining > 0) {
     w = write(fd, (char *) buffer + done, remaining);
     if (w < 0)
-      err(1, "write superblock");
+      err(1, "write super block");
     done += w;
     remaining -= w;
   }
