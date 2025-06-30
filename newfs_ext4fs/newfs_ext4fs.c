@@ -30,6 +30,8 @@
 
 static char *progname = NULL;
 
+void arc4random_buf(void *buf, size_t n);
+
 void group_desc_init (struct ext4fs_group_desc *gd,
                       uint32_t block_bitmap_block,
                       uint32_t inode_bitmap_block,
@@ -217,7 +219,7 @@ int main (int argc, char **argv)
   sb->sb_feature_incompat = htole32(EXT4FS_FEATURE_INCOMPAT_EXTENTS |
                                     EXT4FS_FEATURE_INCOMPAT_64BIT);
   sb->sb_feature_ro_compat = htole32(EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER);
-  sb->sb_desc_size = htole16(gd_size);
+  sb->sb_group_descriptor_size = htole16(gd_size);
   sb->sb_creator_os = htole32(EXT4FS_OS_OPENBSD);
   sb->sb_default_reserved_uid = htole16(0);
   sb->sb_default_reserved_gid = htole16(0);

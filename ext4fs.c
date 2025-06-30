@@ -80,6 +80,23 @@ const s_enum ext4fs_feature_ro_compat_enum[] = {
   {0, NULL}
 };
 
+const s_enum ext4fs_mount_enum[] = {
+  {EXT4FS_MOUNT_READONLY,             "ro"},
+  {EXT4FS_MOUNT_NO_ATIME,             "noatime"},
+  {EXT4FS_MOUNT_DIRSYNC,              "dirsync"},
+  {EXT4FS_MOUNT_DATA_JOURNAL,         "data=journal"},
+  {EXT4FS_MOUNT_DATA_ORDERED,         "data=ordered"},
+  {EXT4FS_MOUNT_DATA_WRITEBACK,       "data=writeback"},
+  {EXT4FS_MOUNT_ERRORS_CONTINUE,      "errors=continue"},
+  {EXT4FS_MOUNT_ERRORS_REMOUNT_RO,    "errors=remount-ro"},
+  {EXT4FS_MOUNT_ERRORS_PANIC,         "errors=panic"},
+  {EXT4FS_MOUNT_DISCARD,              "discard"},
+  {EXT4FS_MOUNT_NO_BUFFER_HEADS,      "no-buffer-heads"},
+  {EXT4FS_MOUNT_SKIP_JOURNAL,         "skip-journal"},
+  {EXT4FS_MOUNT_NOAUTO_DELAYED_ALLOC, "noauto-delayed-alloc"},
+  {0, NULL}
+};
+
 const char *ext4fs_os_str[] = {
   "Linux",
   "Hurd",
@@ -320,6 +337,8 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   char str_check_time[32];
   char str_mount_time[32];
   char str_write_time[32];
+  char volume_name[EXT4FS_LABEL_MAX + 1] = {0};
+  char last_mounted[EXT4FS_LAST_MOUNTED_MAX + 1] = {0};
   if (ext4fs_blocks_count(sb, &blocks_count) ||
       ext4fs_reserved_blocks_count(sb, &reserved_blocks_count) ||
       ext4fs_free_blocks_count(sb, &free_blocks_count) ||
@@ -330,6 +349,8 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
       ext4fs_time_to_str(le32toh(sb->sb_check_time), str_check_time,
                          sizeof(str_check_time)))
     return -1;
+  strlcpy(volume_name, sb->sb_volume_name, sizeof(volume_name));
+  strlcpy(last_mounted, sb->sb_last_mounted, sizeof(last_mounted));
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
          "                   sb_blocks_count: (U64) %lu,\n"
          "                   sb_reserved_blocks_count: (U64) %lu,\n"
@@ -398,7 +419,47 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   printf(",\n"
          "                   sb_uuid: ");
   uuid_print(sb->sb_uuid);
-  printf("}\n");
+  printf(",\n"
+         "                   sb_volume_name: %s,\n"
+         "                   sb_last_mounted: %s,\n"
+         "                   sb_algorithm_usage_bitmap: (U32) %u,\n"
+         "                   sb_preallocate_blocks: (U8) %u,\n"
+         "                   sb_preallocate_dir_blocks: (U8) %u,\n"
+         "                   sb_reserved_gdt_blocks: (U16) %u,\n"
+         "                   sb_journal_uuid: ",
+         volume_name,
+         last_mounted,
+         le32toh(sb->sb_algorithm_usage_bitmap),
+         sb->sb_preallocate_blocks,
+         sb->sb_preallocate_dir_blocks,
+         le16toh(sb->sb_reserved_gdt_blocks));
+  uuid_print(sb->sb_journal_uuid);
+  printf(",\n"
+         "                   sb_journal_inode_number: (U32) %u,\n"
+         "                   sb_journal_device_number: (U32) %u,\n"
+         "                   sb_last_orphan: (U32) %u,\n"
+         "                   sb_hash_seed: (U32) {0x%08x,\n"
+         "                                        0x%08x,\n"
+         "                                        0x%08x,\n"
+         "                                        0x%08x},\n"
+         "                   sb_default_hash_version: %u,\n"
+         "                   sb_journal_backup_type: %u,\n"
+         "                   sb_group_descriptor_size: (U16) %u,\n"
+         "                   sb_default_mount_opts: ",
+         le32toh(sb->sb_journal_inode_number),
+         le32toh(sb->sb_journal_device_number),
+         le32toh(sb->sb_last_orphan),
+         sb->sb_hash_seed[0], sb->sb_hash_seed[1], sb->sb_hash_seed[2],
+         sb->sb_hash_seed[3],
+         sb->sb_default_hash_version,
+         sb->sb_journal_backup_type,
+         le16toh(sb->sb_group_descriptor_size));
+  ext4fs_inspect_enum(le32toh(sb->sb_default_mount_opts),
+                      ext4fs_mount_enum);
+  printf(",\n"
+         "                   sb_first_meta_block_group: (U32) %u,\n"
+         "                   }\n",
+         le32toh(sb->sb_first_meta_block_group));
   return 0;
 }
 

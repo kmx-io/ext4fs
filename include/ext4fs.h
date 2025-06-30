@@ -25,6 +25,7 @@ typedef struct {
 #define EXT4FS_REV_DYNAMIC 1
 #define EXT4FS_REV_MINOR 0
 #define EXT4FS_LABEL_MAX 16
+#define EXT4FS_LAST_MOUNTED_MAX 64
 #define EXT4FS_MAGIC 0xEF53
 #define EXT4FS_SUPER_BLOCK_OFFSET 1024
 #define EXT4FS_SUPER_BLOCK_SIZE 1024
@@ -79,6 +80,22 @@ extern const s_enum ext4fs_feature_incompat_enum[];
 #define EXT4FS_FEATURE_RO_COMPAT_PROJECT        0x2000
 
 extern const s_enum ext4fs_feature_ro_compat_enum[];
+
+#define EXT4FS_MOUNT_READONLY              0x0001
+#define EXT4FS_MOUNT_NO_ATIME              0x0002
+#define EXT4FS_MOUNT_DIRSYNC               0x0004
+#define EXT4FS_MOUNT_DATA_JOURNAL          0x0008
+#define EXT4FS_MOUNT_DATA_ORDERED          0x0010
+#define EXT4FS_MOUNT_DATA_WRITEBACK        0x0020
+#define EXT4FS_MOUNT_ERRORS_CONTINUE       0x0040
+#define EXT4FS_MOUNT_ERRORS_REMOUNT_RO     0x0080
+#define EXT4FS_MOUNT_ERRORS_PANIC          0x0100
+#define EXT4FS_MOUNT_DISCARD               0x0200
+#define EXT4FS_MOUNT_NO_BUFFER_HEADS       0x0400
+#define EXT4FS_MOUNT_SKIP_JOURNAL          0x0800
+#define EXT4FS_MOUNT_NOAUTO_DELAYED_ALLOC  0x1000
+
+extern const s_enum ext4fs_mount_enum[];
 
 #define EXT4FS_OS_LINUX     0
 #define EXT4FS_OS_HURD      1
@@ -135,25 +152,24 @@ struct ext4fs_super_block {
   uint32_t sb_feature_ro_compat;
   uint8_t  sb_uuid[16];
   char     sb_volume_name[EXT4FS_LABEL_MAX];
-  char     sb_last_mounted[64];
+  char     sb_last_mounted[EXT4FS_LAST_MOUNTED_MAX];
   uint32_t sb_algorithm_usage_bitmap;
-
   uint8_t  sb_preallocate_blocks;
   uint8_t  sb_preallocate_dir_blocks;
   uint16_t sb_reserved_gdt_blocks;  // Per group desc for online growth
 
   uint8_t  sb_journal_uuid[16];     // UUID of journal superblock
 
-  uint32_t sb_journal_inum;         // Inode number of journal file
-  uint32_t sb_journal_dev;          // Device number of journal file
-  uint32_t sb_last_orphan;          // Start of orphan inode list
-  uint32_t sb_hash_seed[4];         // HTREE hash seed
-  uint8_t  sb_def_hash_version;     // Default hash version
-  uint8_t  sb_jnl_backup_type;
-  uint16_t sb_desc_size;            // Group descriptor size
+  uint32_t sb_journal_inode_number;
+  uint32_t sb_journal_device_number;
+  uint32_t sb_last_orphan;
+  uint32_t sb_hash_seed[4];
+  uint8_t  sb_default_hash_version;
+  uint8_t  sb_journal_backup_type;
+  uint16_t sb_group_descriptor_size;
 
   uint32_t sb_default_mount_opts;
-  uint32_t sb_first_meta_bg;        // First metablock block group
+  uint32_t sb_first_meta_block_group;
   uint32_t sb_newfs_time;
   uint32_t sb_jnl_blocks[17];       // Backup of journal inode
 
