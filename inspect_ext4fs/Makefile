@@ -11,9 +11,9 @@
 ## THIS SOFTWARE.
 
 PROG =    inspect_ext4fs
-HEADERS = ../include/ext4fs.h
-SOURCES = inspect_ext4fs.c ../ext4fs.c
-OBJECTS = inspect_ext4fs.o ../ext4fs.o
+HEADERS = ../include/ext4fs.h ../include/uuid.h
+SOURCES = inspect_ext4fs.c ../ext4fs.c ../uuid.c
+OBJECTS = inspect_ext4fs.o ../ext4fs.o ../uuid.o
 
 CPPFLAGS = -I../include
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11

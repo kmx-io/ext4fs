@@ -23,6 +23,7 @@
 #include <linux/fs.h>
 
 #include <ext4fs.h>
+#include <uuid.h>
 
 const char *ext4fs_errors_str[] = {
   "0",
@@ -378,8 +379,12 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   ext4fs_inspect_os(le32toh(sb->sb_creator_os));
   printf("\n"
          "                   sb_revision_level: (U32) %u,\n"
+         "                   sb_default_reserved_uid: (U16) %u,\n"
+         "                   sb_default_reserved_gid: (U16) %u,\n"
          "                   sb_feature_compat: ",
-         le32toh(sb->sb_revision_level));
+         le32toh(sb->sb_revision_level),
+         le16toh(sb->sb_default_reserved_uid),
+         le16toh(sb->sb_default_reserved_gid));
   ext4fs_inspect_enum(le32toh(sb->sb_feature_compat),
                       ext4fs_feature_compat_enum);
   printf(",\n"
@@ -390,6 +395,9 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_feature_ro_compat: ");
   ext4fs_inspect_enum(le32toh(sb->sb_feature_ro_compat),
                       ext4fs_feature_ro_compat_enum);
+  printf(",\n"
+         "                   sb_uuid: ");
+  uuid_print(sb->sb_uuid);
   printf("}\n");
   return 0;
 }

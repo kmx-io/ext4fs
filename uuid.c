@@ -18,7 +18,7 @@ void arc4random_buf(void *buf, size_t n);
 
 void uuid_print(const uint8_t uuid[16]) {
   printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
-         "%02x%02x%02x%02x%02x%02x\n",
+         "%02x%02x%02x%02x%02x%02x",
          uuid[0], uuid[1], uuid[2], uuid[3],
          uuid[4], uuid[5],
          uuid[6], uuid[7],

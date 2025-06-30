@@ -11,9 +11,9 @@
 ## THIS SOFTWARE.
 
 PROG =    ext4fs_test
-HEADERS = ../include/ext4fs.h
-SOURCES = ext4fs_test.c ../ext4fs.c
-OBJECTS = ext4fs_test.o ../ext4fs.o
+HEADERS = ../include/ext4fs.h ../include/uuid.h
+SOURCES = ext4fs_test.c ../ext4fs.c ../uuid.c
+OBJECTS = ext4fs_test.o ../ext4fs.o ../uuid.o
 
 CPPFLAGS = -I../include
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
