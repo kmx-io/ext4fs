@@ -11,6 +11,11 @@
  * THIS SOFTWARE.
  */
 #define _DEFAULT_SOURCE 1
+
+#ifdef Linux
+# include <linux/fs.h>
+#endif
+
 #include <endian.h>
 #include <err.h>
 #include <errno.h>
@@ -22,8 +27,6 @@
 #include <sys/ioctl.h>
 #include <time.h>
 #include <unistd.h>
-
-#include <linux/fs.h>
 
 #include <ext4fs.h>
 #include <uuid.h>
@@ -165,10 +168,10 @@ int main (int argc, char **argv)
   fd = open(device, O_RDWR | O_EXCL);
   if (fd < 0)
     err(1, "open: %s", device);
-  if (ext4fs_size(fd, &size) ||
+  if (ext4fs_size(device, fd, &size) ||
       ! size)
-    err(1, "ext4fs_size");
-  printf("ext4fs_size: %lu\n", size);
+    errx(1, "ext4fs_size: %s", device);
+  printf("ext4fs_size: %llu\n", size);
   sb_size = (EXT4FS_SUPER_BLOCK_OFFSET + EXT4FS_SUPER_BLOCK_SIZE +
              (block_size - 1)) / block_size * block_size;
   buffer = calloc(1, sb_size);

@@ -1,0 +1,20 @@
+#!/bin/sh
+
+(
+    . ./configure.subr
+
+    UNAME=$(uname)
+
+    echo "UNAME = ${UNAME}" >> ${CONFIGURE_MK}
+
+    update_configure_mk
+)
+
+echo "$PWD/inspect_ext4fs"
+(cd inspect_ext4fs && ./configure)
+
+echo "$PWD/newfs_ext4fs"
+(cd newfs_ext4fs && ./configure)
+
+echo "$PWD/test"
+(cd test && ./configure)

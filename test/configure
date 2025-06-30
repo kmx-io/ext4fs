@@ -1,0 +1,9 @@
+#!/bin/sh
+
+. ../configure.subr
+
+UNAME=$(uname)
+
+echo "UNAME = ${UNAME}" >> ${CONFIGURE_MK}
+
+update_configure_mk

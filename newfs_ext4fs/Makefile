@@ -10,12 +10,14 @@
 ## AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
 ## THIS SOFTWARE.
 
+include configure.mk
+
 PROG =    newfs_ext4fs
 HEADERS = ../include/ext4fs.h ../include/uuid.h
-SOURCES = newfs_ext4fs.c ../ext4fs.c ../uuid.c
-OBJECTS = newfs_ext4fs.o ../ext4fs.o ../uuid.o
+SOURCES = newfs_ext4fs.c ext4fs.c uuid.c
+OBJECTS = newfs_ext4fs.o ext4fs.o uuid.o
 
-CPPFLAGS = -I../include
+CPPFLAGS = -I../include -D${UNAME}
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
 
 all: build

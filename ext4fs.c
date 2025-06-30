@@ -11,6 +11,17 @@
  * THIS SOFTWARE.
  */
 #define _DEFAULT_SOURCE 1
+
+#if defined(OpenBSD)
+# include <sys/param.h>
+# include <sys/disklabel.h>
+# include <sys/dkio.h>
+#else
+# if defined(Linux)
+#  include <linux/fs.h>
+# endif
+#endif
+
 #include <endian.h>
 #include <err.h>
 #include <fcntl.h>
@@ -19,8 +30,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <linux/fs.h>
 
 #include <ext4fs.h>
 #include <uuid.h>
@@ -169,6 +178,20 @@ int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
   return 0;
 }
 
+#ifdef OpenBSD
+
+struct disklabel *
+ext4fs_disklabel_get (struct disklabel *dl, int fd)
+{
+  if (ioctl(fd, DIOCGDINFO, (char *) dl) == -1) {
+    warn("disklabel_get: ioctl DIOCGDINFO");
+    return NULL;
+  }
+  return dl;
+}
+
+#endif /* OpenBSD */
+
 int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
                               uint64_t *dest)
 {
@@ -254,15 +277,15 @@ int ext4fs_inode_table (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-int ext4fs_inspect (int fd)
+int ext4fs_inspect (const char *dev, int fd)
 {
   struct ext4fs_group_desc gd = {0};
   struct ext4fs_super_block sb = {0};
   uint64_t size = 0;
-  if (ext4fs_size(fd, &size) ||
+  if (ext4fs_size(dev, fd, &size) ||
       ! size)
     return -1;
-  printf("ext4fs_size: %lu\n", size);
+  printf("ext4fs_size: %llu\n", size);
   if (! ext4fs_super_block_read(&sb, fd))
     return -1;
   if (ext4fs_inspect_super_block(&sb))
@@ -320,9 +343,9 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
       ext4fs_inode_bitmap(sb, gd, &inode_bitmap) ||
       ext4fs_inode_table(sb, gd, &inode_table))
     return -1;
-  printf("%%Ext4fs.GroupDesc{gd_block_bitmap: %lu,\n"
-         "                  gd_inode_bitmap: %lu,\n"
-         "                  gd_inode_table: %lu}\n",
+  printf("%%Ext4fs.GroupDesc{gd_block_bitmap: %llu,\n"
+         "                  gd_inode_bitmap: %llu,\n"
+         "                  gd_inode_table: %llu}\n",
          block_bitmap,
          inode_bitmap,
          inode_table);
@@ -352,9 +375,9 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   strlcpy(volume_name, sb->sb_volume_name, sizeof(volume_name));
   strlcpy(last_mounted, sb->sb_last_mounted, sizeof(last_mounted));
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
-         "                   sb_blocks_count: (U64) %lu,\n"
-         "                   sb_reserved_blocks_count: (U64) %lu,\n"
-         "                   sb_free_blocks_count: (U64) %lu,\n"
+         "                   sb_blocks_count: (U64) %llu,\n"
+         "                   sb_reserved_blocks_count: (U64) %llu,\n"
+         "                   sb_free_blocks_count: (U64) %llu,\n"
          "                   sb_free_inodes_count: (U32) %u,\n"
          "                   sb_first_data_block: (U32) %u,\n"
          "                   sb_log_block_size: (U32) %u,  \t# %u\n"
@@ -480,12 +503,42 @@ int ext4fs_reserved_blocks_count (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-int ext4fs_size (int fd, uint64_t *dest)
+int ext4fs_size (const char *dev, int fd, uint64_t *dest)
 {
+#if defined(OpenBSD)
+  const char *dev_last;
+  struct disklabel dl;
+  struct partition *part;
+  int32_t sector_size;
+  if (! dev || ! dev[0]) {
+    warnx("ext4fs_size: invalid dev");
+    return -1;
+  }
+  if (! ext4fs_disklabel_get(&dl, fd))
+    return -1;
+  dev_last = dev + strlen(dev) - 1;
+  if ('0' <= *dev_last && *dev_last <= '9')
+    part = &dl.d_partitions[0];
+  else if (*dev_last < 'a' || *dev_last > 'p') {
+    warnx("ext4fs_size: %s: invalid partition letter", dev);
+    return -1;
+  }
+  else
+    part = &dl.d_partitions[*dev_last - 'a'];
+  if (DL_GETPSIZE(part) == 0)
+    warnx("ext4fs_size: %s: partition is unavailable", dev);
+  sector_size = dl.d_secsize;
+  if (sector_size <= 0) {
+    warnx("ext4fs_size: %s: no sector size in disklabel", dev);
+    return -1;
+  }
+  *dest = DL_GETPSIZE(part) / sector_size * sector_size;
+#else
   if (ioctl(fd, BLKGETSIZE64, dest) < 0) {
     warn("ioctl BLKGETSIZE64");
     return -1;
   }
+#endif
   return 0;
 }
 

@@ -267,6 +267,9 @@ int ext4fs_block_size (const struct ext4fs_super_block *sb,
 int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
                          uint64_t *dest);
 
+struct disklabel *
+ext4fs_disklabel_get (struct disklabel *dl, int fd);
+
 int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
                               uint64_t *dest);
 
@@ -283,7 +286,7 @@ int ext4fs_inode_table (const struct ext4fs_super_block *sb,
                         const struct ext4fs_group_desc *gd,
                         uint64_t *dest);
 
-int ext4fs_inspect (int fd);
+int ext4fs_inspect (const char *dev, int fd);
 
 void ext4fs_inspect_creator_os (uint16_t creator_os);
 
@@ -299,7 +302,7 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 int ext4fs_reserved_blocks_count (const struct ext4fs_super_block *sb,
                                   uint64_t *dest);
 
-int ext4fs_size (int fd, uint64_t *dest);
+int ext4fs_size (const char *dev, int fd, uint64_t *dest);
 
 struct ext4fs_super_block *
 ext4fs_super_block_read (struct ext4fs_super_block *sb,
