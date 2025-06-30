@@ -227,6 +227,7 @@ int main (int argc, char **argv)
   uuid_v4_gen(sb->sb_uuid);
   printf("uuid: ");
   uuid_print(sb->sb_uuid);
+  printf("\n");
   sb->sb_block_group_id = htole16(0);
   printf("\n");
   if (lseek(fd, 0, SEEK_SET) < 0)
