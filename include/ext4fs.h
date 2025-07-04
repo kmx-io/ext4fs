@@ -81,6 +81,14 @@ extern const s_enum ext4fs_feature_incompat_enum[];
 
 extern const s_enum ext4fs_feature_ro_compat_enum[];
 
+#define EXT4FS_FLAGS_SIGNED_HASH        0x0001  // Legacy hash uses signed ints
+#define EXT4FS_FLAGS_UNSIGNED_HASH      0x0002  // Default: unsigned directory hash
+#define EXT4FS_FLAGS_TEST_FILESYS       0x0004  // Marked as a test filesystem
+#define EXT4FS_FLAGS_64BIT              0x0008  // Uses 64-bit block numbers
+#define EXT4FS_FLAGS_MOUNT_OPT_CHECK    0x0010  // Kernel must check mount opts
+
+extern const s_enum ext4fs_flags_enum[];
+
 #define EXT4FS_MOUNT_READONLY              0x0001
 #define EXT4FS_MOUNT_NO_ATIME              0x0002
 #define EXT4FS_MOUNT_DIRSYNC               0x0004
@@ -176,8 +184,8 @@ struct ext4fs_super_block {
   uint32_t sb_blocks_count_hi;
   uint32_t sb_reserved_blocks_count_hi;
   uint32_t sb_free_blocks_count_hi;
-  uint16_t sb_min_extra_isize;
-  uint16_t sb_want_extra_isize;
+  uint16_t sb_min_extra_inode_size;
+  uint16_t sb_want_extra_inode_size;
 
   uint32_t sb_flags;
   uint16_t sb_raid_stride;

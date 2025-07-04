@@ -1,0 +1,68 @@
+./inspect_ext4fs/inspect_ext4fs /dev/sdb1
+ext4fs_size: 15723659264
+%Ext4fs.SuperBlock{sb_inodes_count: (U32) 960992,
+                   sb_blocks_count: (U64) 3838784,
+                   sb_reserved_blocks_count: (U64) 191939,
+                   sb_free_blocks_count: (U64) 3751826,
+                   sb_free_inodes_count: (U32) 960981,
+                   sb_first_data_block: (U32) 0,
+                   sb_log_block_size: (U32) 2,  	# 4096
+                   sb_log_cluster_size: (U32) 2,	# 4096
+                   sb_blocks_per_group: (U32) 32768,
+                   sb_clusters_per_group: (U32) 32768,
+                   sb_inodes_per_group: (U32) 8144,
+                   sb_mount_time: (U32) 1751523079,	# 2025-07-03 08:11:19 CEST
+                   sb_write_time: (U32) 1751550671,	# 2025-07-03 15:51:11 CEST
+                   sb_mount_count: (U16) 3,
+                   sb_max_mount_count: (S16) -1,
+                   sb_magic: (U16) 0xEF53,		# 61267
+                   sb_state: valid,
+                   sb_errors: continue,
+                   sb_revision_level_minor: (U16) 0,
+                   sb_check_time: (U32) 1751228334,	# 2025-06-29 22:18:54 CEST
+                   sb_check_interval: (U32) 0,
+                   sb_creator_os: (U32) 0,		# Linux
+                   sb_revision_level: (U32) 1,
+                   sb_default_reserved_uid: (U16) 0,
+                   sb_default_reserved_gid: (U16) 0,
+                   sb_feature_compat: has_journal | ext_attr | resize_inode | dir_index,
+                   sb_feature_incompat: filetype | extents | 64bit | flex_bg,
+                   sb_feature_ro_compat: sparse_super | large_file | huge_file | dir_nlink | extra_isize | metadata_csum,
+                   sb_uuid: 3188b706-d0cb-421f-b961-d91363e44158,
+                   sb_volume_name: ext4fs,
+                   sb_last_mounted: ,
+                   sb_algorithm_usage_bitmap: (U32) 0,
+                   sb_preallocate_blocks: (U8) 0,
+                   sb_preallocate_dir_blocks: (U8) 0,
+                   sb_reserved_gdt_blocks: (U16) 1024,
+                   sb_journal_uuid: 00000000-0000-0000-0000-000000000000,
+                   sb_journal_inode_number: (U32) 8,
+                   sb_journal_device_number: (U32) 0,
+                   sb_last_orphan: (U32) 0,
+                   sb_hash_seed: (U32) {0x7f93685e,
+                                        0xae4f8743,
+                                        0x02c06793,
+                                        0x558feb89},
+                   sb_default_hash_version: 1,
+                   sb_journal_backup_type: 1,
+                   sb_group_descriptor_size: (U16) 64,
+                   sb_default_mount_opts: dirsync | data=journal,
+                   sb_first_meta_block_group: (U32) 0,
+                   sb_newfs_time: (U32) 1751228334,	# 2025-06-29 22:18:54 CEST
+                   sb_jnl_blocks: (U32) {0x0001f30a, 0x00000004,
+                                         0x00000000, 0x00000000,
+                                         0x00004000, 0x00188403,
+                                         0x00000000, 0x00000000,
+                                         0x00000000, 0x00000000,
+                                         0x00000000, 0x00000000,
+                                         0x00000000, 0x00000000,
+                                         0x00000000, 0x00000000,
+                                         0x04000000},
+                   sb_min_extra_inode_size: (U16) 32,
+                   sb_want_extra_inode_size: (U16) 32,
+                   sb_flags: signed_hash,
+                   }
+%Ext4fs.GroupDesc{gd_block_bitmap: 1027,
+                  gd_inode_bitmap: 1043,
+                  gd_inode_table: 1059}
+EOF
