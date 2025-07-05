@@ -188,7 +188,7 @@ struct ext4fs_super_block {
   uint16_t sb_want_extra_inode_size;
 
   uint32_t sb_flags;
-  uint16_t sb_raid_stride;
+  uint16_t sb_raid_stride_block_count;
   uint16_t sb_mmp_interval;
   uint64_t sb_mmp_block;
   

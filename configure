@@ -3,10 +3,12 @@
 (
     . ./configure.subr
 
-    UNAME=$(uname)
+    configure_sizeof_long
 
+    UNAME=$(uname)
     echo "UNAME = ${UNAME}" >> ${CONFIGURE_MK}
 
+    update_configure_h
     update_configure_mk
 )
 

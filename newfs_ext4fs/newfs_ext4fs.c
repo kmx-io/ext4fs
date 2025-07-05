@@ -10,6 +10,8 @@
  * AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
  * THIS SOFTWARE.
  */
+#include "configure.h"
+
 #define _DEFAULT_SOURCE 1
 
 #ifdef Linux
@@ -171,7 +173,7 @@ int main (int argc, char **argv)
   if (ext4fs_size(device, fd, &size) ||
       ! size)
     errx(1, "ext4fs_size: %s", device);
-  printf("ext4fs_size: %llu\n", size);
+  printf("ext4fs_size: " CONFIGURE_FMT_UINT64 "\n", size);
   sb_size = (EXT4FS_SUPER_BLOCK_OFFSET + EXT4FS_SUPER_BLOCK_SIZE +
              (block_size - 1)) / block_size * block_size;
   buffer = calloc(1, sb_size);

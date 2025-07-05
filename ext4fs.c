@@ -10,6 +10,7 @@
  * AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
  * THIS SOFTWARE.
  */
+#include "configure.h"
 #define _DEFAULT_SOURCE 1
 
 #if defined(OpenBSD)
@@ -294,7 +295,7 @@ int ext4fs_inspect (const char *dev, int fd)
   if (ext4fs_size(dev, fd, &size) ||
       ! size)
     return -1;
-  printf("ext4fs_size: %llu\n", size);
+  printf("ext4fs_size: " CONFIGURE_FMT_UINT64 "\n", size);
   if (! ext4fs_super_block_read(&sb, fd))
     return -1;
   if (ext4fs_inspect_super_block(&sb))
@@ -352,9 +353,9 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
       ext4fs_inode_bitmap(sb, gd, &inode_bitmap) ||
       ext4fs_inode_table(sb, gd, &inode_table))
     return -1;
-  printf("%%Ext4fs.GroupDesc{gd_block_bitmap: %llu,\n"
-         "                  gd_inode_bitmap: %llu,\n"
-         "                  gd_inode_table: %llu}\n",
+  printf("%%Ext4fs.GroupDesc{gd_block_bitmap: " CONFIGURE_FMT_UINT64 ",\n"
+         "                  gd_inode_bitmap: " CONFIGURE_FMT_UINT64 ",\n"
+         "                  gd_inode_table: " CONFIGURE_FMT_UINT64 "}\n",
          block_bitmap,
          inode_bitmap,
          inode_table);
@@ -387,9 +388,9 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   strlcpy(volume_name, sb->sb_volume_name, sizeof(volume_name));
   strlcpy(last_mounted, sb->sb_last_mounted, sizeof(last_mounted));
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
-         "                   sb_blocks_count: (U64) %llu,\n"
-         "                   sb_reserved_blocks_count: (U64) %llu,\n"
-         "                   sb_free_blocks_count: (U64) %llu,\n"
+         "                   sb_blocks_count: (U64) " CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_reserved_blocks_count: (U64) " CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_free_blocks_count: (U64) " CONFIGURE_FMT_UINT64 ",\n"
          "                   sb_free_inodes_count: (U32) %u,\n"
          "                   sb_first_data_block: (U32) %u,\n"
          "                   sb_log_block_size: (U32) %u,  \t# %u\n"
@@ -574,7 +575,7 @@ int ext4fs_size (const char *dev, int fd, uint64_t *dest)
   *dest = DL_GETPSIZE(part) / sector_size * sector_size;
 #else
   if (ioctl(fd, BLKGETSIZE64, dest) < 0) {
-    warn("ioctl BLKGETSIZE64");
+    warn("%s: ioctl BLKGETSIZE64", dev);
     return -1;
   }
 #endif
