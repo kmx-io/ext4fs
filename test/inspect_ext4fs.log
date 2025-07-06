@@ -11,15 +11,15 @@ ext4fs_size: 15723659264
                    sb_blocks_per_group: (U32) 32768,
                    sb_clusters_per_group: (U32) 32768,
                    sb_inodes_per_group: (U32) 8144,
-                   sb_mount_time: (U32) 1751523079,	# 2025-07-03 08:11:19 CEST
-                   sb_write_time: (U32) 1751550671,	# 2025-07-03 15:51:11 CEST
-                   sb_mount_count: (U16) 3,
+                   sb_mount_time: (U64) 1751676872,	# 2025-07-05 02:54:32 CEST
+                   sb_write_time: (U64) 1751755781,	# 2025-07-06 00:49:41 CEST
+                   sb_mount_count: (U16) 4,
                    sb_max_mount_count: (S16) -1,
                    sb_magic: (U16) 0xEF53,		# 61267
                    sb_state: valid,
                    sb_errors: continue,
                    sb_revision_level_minor: (U16) 0,
-                   sb_check_time: (U32) 1751228334,	# 2025-06-29 22:18:54 CEST
+                   sb_check_time: (U64) 1751228334,	# 2025-06-29 22:18:54 CEST
                    sb_check_interval: (U32) 0,
                    sb_creator_os: (U32) 0,		# Linux
                    sb_revision_level: (U32) 1,
@@ -48,7 +48,7 @@ ext4fs_size: 15723659264
                    sb_group_descriptor_size: (U16) 64,
                    sb_default_mount_opts: dirsync | data=journal,
                    sb_first_meta_block_group: (U32) 0,
-                   sb_newfs_time: (U32) 1751228334,	# 2025-06-29 22:18:54 CEST
+                   sb_newfs_time: (U64) 1751228334,	# 2025-06-29 22:18:54 CEST
                    sb_jnl_blocks: (U32) {0x0001f30a, 0x00000004,
                                          0x00000000, 0x00000000,
                                          0x00004000, 0x00188403,
@@ -58,9 +58,14 @@ ext4fs_size: 15723659264
                                          0x00000000, 0x00000000,
                                          0x00000000, 0x00000000,
                                          0x04000000},
-                   sb_min_extra_inode_size: (U16) 32,
-                   sb_want_extra_inode_size: (U16) 32,
+                   sb_inode_size_extra_min: (U16) 32,
+                   sb_inode_size_extra_want: (U16) 32,
                    sb_flags: signed_hash,
+                   sb_raid_stride_block_count: 0,
+                   sb_mmp_interval: (U32) 0,
+                   sb_mmp_block: (U32) 0,
+                   sb_raid_stripe_width_block_count: (U32) 0,
+                   sb_log_groups_per_flex: 4,		# 16,
                    }
 %Ext4fs.GroupDesc{gd_block_bitmap: 1027,
                   gd_inode_bitmap: 1043,

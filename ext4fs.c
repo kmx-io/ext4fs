@@ -35,7 +35,17 @@
 #include <ext4fs.h>
 #include <uuid.h>
 
-const char *ext4fs_errors_str[] = {
+const s_value_name ext4fs_encoding_names[] = {
+  {EXT4FS_ENCODING_UTF8, "utf8"},
+  {0, NULL}
+};
+
+const s_value_name ext4fs_encoding_flag_names[] = {
+  {EXT4FS_ENCODING_FLAG_STRICT_MODE, "utf8"},
+  {0, NULL}
+};
+
+const char *ext4fs_errors_names[] = {
   "0",
   "continue",
   "remount-ro",
@@ -43,7 +53,7 @@ const char *ext4fs_errors_str[] = {
   NULL
 };
 
-const s_enum ext4fs_feature_compat_enum[] = {
+const s_value_name ext4fs_feature_compat_names[] = {
   {EXT4FS_FEATURE_COMPAT_DIR_PREALLOC,  "dir_prealloc"},
   {EXT4FS_FEATURE_COMPAT_IMAGIC_INODES, "imagic_inodes"},
   {EXT4FS_FEATURE_COMPAT_HAS_JOURNAL,   "has_journal"},
@@ -53,7 +63,7 @@ const s_enum ext4fs_feature_compat_enum[] = {
   {0, NULL}
 };
 
-const s_enum ext4fs_feature_incompat_enum[] = {
+const s_value_name ext4fs_feature_incompat_names[] = {
   {EXT4FS_FEATURE_INCOMPAT_COMPRESSION, "compression"},
   {EXT4FS_FEATURE_INCOMPAT_FILETYPE,    "filetype"},
   {EXT4FS_FEATURE_INCOMPAT_RECOVER,     "recover"},
@@ -72,7 +82,7 @@ const s_enum ext4fs_feature_incompat_enum[] = {
   {0, NULL}
 };
 
-const s_enum ext4fs_feature_ro_compat_enum[] = {
+const s_value_name ext4fs_feature_ro_compat_names[] = {
   {EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER,  "sparse_super"},
   {EXT4FS_FEATURE_RO_COMPAT_LARGE_FILE,    "large_file"},
   {EXT4FS_FEATURE_RO_COMPAT_BTREE_DIR,     "btree_dir"},
@@ -90,16 +100,16 @@ const s_enum ext4fs_feature_ro_compat_enum[] = {
   {0, NULL}
 };
 
-const s_enum ext4fs_flags_enum[] = {
-  {EXT4FS_FLAGS_SIGNED_HASH, "signed_hash"},
-  {EXT4FS_FLAGS_UNSIGNED_HASH, "unsigned_hash"},
-  {EXT4FS_FLAGS_TEST_FILESYS, "test_fs"},
-  {EXT4FS_FLAGS_64BIT, "64bit"},
-  {EXT4FS_FLAGS_MOUNT_OPT_CHECK, "mount_opt_check"},
+const s_value_name ext4fs_flag_names[] = {
+  {EXT4FS_FLAG_SIGNED_HASH, "signed_hash"},
+  {EXT4FS_FLAG_UNSIGNED_HASH, "unsigned_hash"},
+  {EXT4FS_FLAG_TEST_FILESYS, "test_fs"},
+  {EXT4FS_FLAG_64BIT, "64bit"},
+  {EXT4FS_FLAG_MOUNT_OPT_CHECK, "mount_opt_check"},
   {0, NULL}
 };
 
-const s_enum ext4fs_mount_enum[] = {
+const s_value_name ext4fs_mount_names[] = {
   {EXT4FS_MOUNT_READONLY,             "ro"},
   {EXT4FS_MOUNT_NO_ATIME,             "noatime"},
   {EXT4FS_MOUNT_DIRSYNC,              "dirsync"},
@@ -116,7 +126,7 @@ const s_enum ext4fs_mount_enum[] = {
   {0, NULL}
 };
 
-const char *ext4fs_os_str[] = {
+const char *ext4fs_os_names[] = {
   "Linux",
   "Hurd",
   "Masix",
@@ -126,7 +136,7 @@ const char *ext4fs_os_str[] = {
   NULL
 };
 
-const s_enum ext4fs_state_enum[] = {
+const s_value_name ext4fs_state_names[] = {
   {EXT4FS_STATE_VALID, "valid"},
   {EXT4FS_STATE_ERROR, "error"},
   {0, NULL}
@@ -152,7 +162,7 @@ int ext4fs_block_bitmap (const struct ext4fs_super_block *sb,
   }
   *dest = le32toh(gd->gd_block_bitmap_lo);
   if (ext4fs_64bit(sb))
-    *dest |= ((uint64_t) le32toh(gd->gd_block_bitmap_hi) << 32);
+    *dest |= (uint64_t) le32toh(gd->gd_block_bitmap_hi) << 32;
   return 0;
 }
 
@@ -184,7 +194,24 @@ int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
   }
   *dest = le32toh(sb->sb_blocks_count_lo);
   if (ext4fs_64bit(sb))
-    *dest |= ((uint64_t) le32toh(sb->sb_blocks_count_hi) << 32);
+    *dest |= (uint64_t) le32toh(sb->sb_blocks_count_hi) << 32;
+  return 0;
+}
+
+int ext4fs_check_time (const struct ext4fs_super_block *sb,
+                       uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_check_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_check_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_check_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= ((uint64_t) sb->sb_check_time_hi) << 32;
   return 0;
 }
 
@@ -215,7 +242,7 @@ int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
   }
   *dest = le32toh(sb->sb_free_blocks_count_lo);
   if (ext4fs_64bit(sb))
-    *dest |= ((uint64_t) le32toh(sb->sb_free_blocks_count_hi) << 32);
+    *dest |= (uint64_t) le32toh(sb->sb_free_blocks_count_hi) << 32;
   return 0;
 }
 
@@ -265,7 +292,7 @@ int ext4fs_inode_bitmap (const struct ext4fs_super_block *sb,
   }
   *dest = le32toh(gd->gd_inode_bitmap_lo);
   if (ext4fs_64bit(sb))
-    *dest |= ((uint64_t) le32toh(gd->gd_inode_bitmap_hi) << 32);
+    *dest |= (uint64_t) le32toh(gd->gd_inode_bitmap_hi) << 32;
   return 0;
 }
 
@@ -283,7 +310,7 @@ int ext4fs_inode_table (const struct ext4fs_super_block *sb,
   }
   *dest = le32toh(gd->gd_inode_table_lo);
   if (ext4fs_64bit(sb))
-    *dest |= ((uint64_t) le32toh(gd->gd_inode_table_hi) << 32);
+    *dest |= (uint64_t) le32toh(gd->gd_inode_table_hi) << 32;
   return 0;
 }
 
@@ -310,35 +337,42 @@ int ext4fs_inspect (const char *dev, int fd)
 
 void ext4fs_inspect_os (uint32_t os)
 {
-  if (os < sizeof(ext4fs_os_str) / sizeof(const char *) - 1)
-    printf("%s", ext4fs_os_str[os]);
+  if (os < sizeof(ext4fs_os_names) / sizeof(const char *) - 1)
+    printf("%s", ext4fs_os_names[os]);
   else
     printf("(U32) %u", os);
 }
 
-int ext4fs_inspect_enum (uint32_t x, const s_enum *enum_desc)
+int ext4fs_inspect_flag_names (uint32_t flags, const s_value_name *names)
 {
-  const s_enum *e = enum_desc;
-  char first = 1;
-  while (e->name) {
-    if (x & e->value) {
+  char first;
+  const s_value_name *i;
+  uint32_t remaining;
+  first = 1;
+  i = names;
+  remaining = flags;
+  while (i->name) {
+    if (flags & i->value) {
       if (! first)
         printf(" | ");
       else
         first = 0;
-      printf("%s", e->name);
+      printf("%s", i->name);
+      remaining &= ~i->value;
     }
-    e++;
+    i++;
   }
   if (first)
-    printf("0");
+    printf("0x%04X", remaining);
+  else if (remaining)
+    printf(" | 0x%04X", remaining);
   return 0;
 }
 
 void ext4fs_inspect_errors (uint16_t errors)
 {
-  if (errors < sizeof(ext4fs_errors_str) / sizeof(const char *) - 1)
-    printf("%s", ext4fs_errors_str[errors]);
+  if (errors < sizeof(ext4fs_errors_names) / sizeof(const char *) - 1)
+    printf("%s", ext4fs_errors_names[errors]);
   else
     printf("(U16) %u", errors);
 }
@@ -365,32 +399,43 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
 {
   uint64_t blocks_count;
+  uint64_t check_time;
   uint64_t free_blocks_count;
+  char last_mounted[EXT4FS_LAST_MOUNTED_MAX + 1] = {0};
+  uint64_t mount_time;
+  uint64_t newfs_time;
   uint64_t reserved_blocks_count;
   char str_check_time[32];
   char str_mount_time[32];
   char str_write_time[32];
   char str_newfs_time[32];
-  char volume_name[EXT4FS_LABEL_MAX + 1] = {0};
-  char last_mounted[EXT4FS_LAST_MOUNTED_MAX + 1] = {0};
+  char volume_name[EXT4FS_VOLUME_NAME_MAX + 1] = {0};
+  uint64_t write_time;
   if (ext4fs_blocks_count(sb, &blocks_count) ||
       ext4fs_reserved_blocks_count(sb, &reserved_blocks_count) ||
       ext4fs_free_blocks_count(sb, &free_blocks_count) ||
-      ext4fs_time_to_str(le32toh(sb->sb_mount_time), str_mount_time,
-                         sizeof(str_mount_time)) ||
-      ext4fs_time_to_str(le32toh(sb->sb_write_time), str_write_time,
-                         sizeof(str_write_time)) ||
-      ext4fs_time_to_str(le32toh(sb->sb_check_time), str_check_time,
-                         sizeof(str_check_time)) ||
-      ext4fs_time_to_str(le32toh(sb->sb_newfs_time), str_newfs_time,
-                         sizeof(str_newfs_time)))
+      ext4fs_mount_time(sb, &mount_time) ||
+      ext4fs_write_time(sb, &write_time) ||
+      ext4fs_check_time(sb, &check_time) ||
+      ext4fs_newfs_time(sb, &newfs_time) ||
+      ext4fs_time_to_str(mount_time,
+                         str_mount_time, sizeof(str_mount_time)) ||
+      ext4fs_time_to_str(write_time,
+                         str_write_time, sizeof(str_write_time)) ||
+      ext4fs_time_to_str(check_time,
+                         str_check_time, sizeof(str_check_time)) ||
+      ext4fs_time_to_str(newfs_time,
+                         str_newfs_time, sizeof(str_newfs_time)))
     return -1;
   strlcpy(volume_name, sb->sb_volume_name, sizeof(volume_name));
   strlcpy(last_mounted, sb->sb_last_mounted, sizeof(last_mounted));
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
-         "                   sb_blocks_count: (U64) " CONFIGURE_FMT_UINT64 ",\n"
-         "                   sb_reserved_blocks_count: (U64) " CONFIGURE_FMT_UINT64 ",\n"
-         "                   sb_free_blocks_count: (U64) " CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_blocks_count: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_reserved_blocks_count: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_free_blocks_count: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
          "                   sb_free_inodes_count: (U32) %u,\n"
          "                   sb_first_data_block: (U32) %u,\n"
          "                   sb_log_block_size: (U32) %u,  \t# %u\n"
@@ -398,8 +443,10 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_blocks_per_group: (U32) %u,\n"
          "                   sb_clusters_per_group: (U32) %u,\n"
          "                   sb_inodes_per_group: (U32) %u,\n"
-         "                   sb_mount_time: (U32) %u,\t# %s\n"
-         "                   sb_write_time: (U32) %u,\t# %s\n"
+         "                   sb_mount_time: (U64) "
+         CONFIGURE_FMT_UINT64 ",\t# %s\n"
+         "                   sb_write_time: (U64) "
+         CONFIGURE_FMT_UINT64 ",\t# %s\n"
          "                   sb_mount_count: (U16) %u,\n"
          "                   sb_max_mount_count: (S16) %d,\n"
          "                   sb_magic: (U16) 0x%04X,\t\t# %u\n"
@@ -415,22 +462,22 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          le32toh(sb->sb_blocks_per_group),
          le32toh(sb->sb_clusters_per_group),
          le32toh(sb->sb_inodes_per_group),
-         le32toh(sb->sb_mount_time), str_mount_time,
-         le32toh(sb->sb_write_time), str_write_time,
+         mount_time, str_mount_time,
+         write_time, str_write_time,
          le16toh(sb->sb_mount_count),
          (int16_t) le16toh(sb->sb_max_mount_count_before_fsck),
          le16toh(sb->sb_magic), le16toh(sb->sb_magic));
-  ext4fs_inspect_enum(le16toh(sb->sb_state), ext4fs_state_enum);
+  ext4fs_inspect_flag_names(le16toh(sb->sb_state), ext4fs_state_names);
   printf(",\n"
          "                   sb_errors: ");
   ext4fs_inspect_errors(le16toh(sb->sb_errors));
   printf(",\n"
          "                   sb_revision_level_minor: (U16) %u,\n"
-         "                   sb_check_time: (U32) %u,\t# %s\n"
+         "                   sb_check_time: (U64) " CONFIGURE_FMT_UINT64 ",\t# %s\n"
          "                   sb_check_interval: (U32) %u,\n"
          "                   sb_creator_os: (U32) %u,\t\t# ",
          le32toh(sb->sb_revision_level_minor),
-         le32toh(sb->sb_check_time), str_check_time,
+         check_time, str_check_time,
          le32toh(sb->sb_check_interval),
          le32toh(sb->sb_creator_os));
   ext4fs_inspect_os(le32toh(sb->sb_creator_os));
@@ -442,16 +489,16 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          le32toh(sb->sb_revision_level),
          le16toh(sb->sb_default_reserved_uid),
          le16toh(sb->sb_default_reserved_gid));
-  ext4fs_inspect_enum(le32toh(sb->sb_feature_compat),
-                      ext4fs_feature_compat_enum);
+  ext4fs_inspect_flag_names(le32toh(sb->sb_feature_compat),
+                             ext4fs_feature_compat_names);
   printf(",\n"
          "                   sb_feature_incompat: ");
-  ext4fs_inspect_enum(le32toh(sb->sb_feature_incompat),
-                      ext4fs_feature_incompat_enum);
+  ext4fs_inspect_flag_names(le32toh(sb->sb_feature_incompat),
+                             ext4fs_feature_incompat_names);
   printf(",\n"
          "                   sb_feature_ro_compat: ");
-  ext4fs_inspect_enum(le32toh(sb->sb_feature_ro_compat),
-                      ext4fs_feature_ro_compat_enum);
+  ext4fs_inspect_flag_names(le32toh(sb->sb_feature_ro_compat),
+                             ext4fs_feature_ro_compat_names);
   printf(",\n"
          "                   sb_uuid: ");
   uuid_print(sb->sb_uuid);
@@ -490,11 +537,12 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          sb->sb_default_hash_version,
          sb->sb_journal_backup_type,
          le16toh(sb->sb_group_descriptor_size));
-  ext4fs_inspect_enum(le32toh(sb->sb_default_mount_opts),
-                      ext4fs_mount_enum);
+  ext4fs_inspect_flag_names(le32toh(sb->sb_default_mount_opts),
+                             ext4fs_mount_names);
   printf(",\n"
          "                   sb_first_meta_block_group: (U32) %u,\n"
-         "                   sb_newfs_time: (U32) %u,\t# %s\n"
+         "                   sb_newfs_time: (U64) "
+         CONFIGURE_FMT_UINT64 ",\t# %s\n"
          "                   sb_jnl_blocks: (U32) {0x%08x, 0x%08x,\n"
          "                                         0x%08x, 0x%08x,\n"
          "                                         0x%08x, 0x%08x,\n"
@@ -504,11 +552,11 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                                         0x%08x, 0x%08x,\n"
          "                                         0x%08x, 0x%08x,\n"
          "                                         0x%08x},\n"
-         "                   sb_min_extra_inode_size: (U16) %u,\n"
-         "                   sb_want_extra_inode_size: (U16) %u,\n"
+         "                   sb_inode_size_extra_min: (U16) %u,\n"
+         "                   sb_inode_size_extra_want: (U16) %u,\n"
          "                   sb_flags: ",
          le32toh(sb->sb_first_meta_block_group),
-         le32toh(sb->sb_newfs_time), str_newfs_time,
+         newfs_time, str_newfs_time,
          le32toh(sb->sb_jnl_blocks[0]), le32toh(sb->sb_jnl_blocks[1]),
          le32toh(sb->sb_jnl_blocks[2]), le32toh(sb->sb_jnl_blocks[3]),
          le32toh(sb->sb_jnl_blocks[4]), le32toh(sb->sb_jnl_blocks[5]),
@@ -518,11 +566,55 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          le32toh(sb->sb_jnl_blocks[12]), le32toh(sb->sb_jnl_blocks[13]),
          le32toh(sb->sb_jnl_blocks[14]), le32toh(sb->sb_jnl_blocks[15]),
          le32toh(sb->sb_jnl_blocks[16]),
-         le16toh(sb->sb_min_extra_inode_size),
-         le16toh(sb->sb_want_extra_inode_size));
-  ext4fs_inspect_enum(le32toh(sb->sb_flags), ext4fs_flags_enum);
+         le16toh(sb->sb_inode_size_extra_min),
+         le16toh(sb->sb_inode_size_extra_want));
+  ext4fs_inspect_flag_names(le32toh(sb->sb_flags), ext4fs_flag_names);
   printf(",\n"
-         "                   }\n");
+         "                   sb_raid_stride_block_count: %u,\n"
+         "                   sb_mmp_interval: (U32) %u,\n"
+         "                   sb_mmp_block: (U32) %u,\n"
+         "                   sb_raid_stripe_width_block_count: (U32) %u,\n"
+         "                   sb_log_groups_per_flex: %u,\t\t# %u,\n"
+         "                   }\n",
+         le16toh(sb->sb_raid_stride_block_count),
+         le32toh(sb->sb_mmp_interval),
+         le32toh(sb->sb_mmp_block),
+         le32toh(sb->sb_raid_stripe_width_block_count),
+         sb->sb_log_groups_per_flex, 1 << sb->sb_log_groups_per_flex);
+  return 0;
+}
+
+int ext4fs_mount_time (const struct ext4fs_super_block *sb,
+                       uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_mount_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_mount_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_mount_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) sb->sb_mount_time_hi << 32;
+  return 0;
+}
+
+int ext4fs_newfs_time (const struct ext4fs_super_block *sb,
+                       uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_newfs_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_newfs_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_newfs_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) sb->sb_newfs_time_hi << 32;
   return 0;
 }
 
@@ -539,7 +631,7 @@ int ext4fs_reserved_blocks_count (const struct ext4fs_super_block *sb,
   }
   *dest = le32toh(sb->sb_reserved_blocks_count_lo);
   if (ext4fs_64bit(sb))
-    *dest |= ((uint64_t) le32toh(sb->sb_reserved_blocks_count_hi) << 32);
+    *dest |= (uint64_t) le32toh(sb->sb_reserved_blocks_count_hi) << 32;
   return 0;
 }
 
@@ -619,5 +711,22 @@ int ext4fs_time_to_str (time_t time, char *str, size_t size)
     warnx("time_to_str: strftime");
     return -1;
   }
+  return 0;
+}
+
+int ext4fs_write_time (const struct ext4fs_super_block *sb,
+                       uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_write_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_write_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_write_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) sb->sb_write_time_hi << 32;
   return 0;
 }

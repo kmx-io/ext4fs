@@ -24,6 +24,10 @@ all: build
 
 build: ${PROG}
 
+ext4fs.o: ../ext4fs.c
+
+uuid.o: ../uuid.c
+
 ${OBJECTS}: ${HEADERS}
 
 ${PROG}: ${OBJECTS}

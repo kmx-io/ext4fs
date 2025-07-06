@@ -104,6 +104,7 @@ static void usage (void) {
 int main (int argc, char **argv)
 {
   uint32_t block_bitmap_block;
+  uint16_t block_group_id = 0;
   uint32_t block_groups_count;
   uint32_t block_size = 4096;
   uint16_t blocks_free;
@@ -119,6 +120,7 @@ int main (int argc, char **argv)
   struct ext4fs_group_desc *gdt;
   uint32_t                  gdt_offset;
   uint32_t                  gdt_size;
+  uint32_t groups_per_flex = 16;
   uint32_t inode_bitmap_block;
   uint32_t inode_ratio = 16384; // One inode per 16 KB
   uint32_t inode_size = 256;
@@ -132,6 +134,7 @@ int main (int argc, char **argv)
   time_t now;
   size_t remaining;
   uint64_t reserved_blocks;
+  uint16_t reserved_gdt_blocks = 1024;
   struct ext4fs_super_block *sb;
   uint32_t                   sb_size;
   uint64_t size;
@@ -155,9 +158,9 @@ int main (int argc, char **argv)
       break;
     case 'L':
       label = optarg;
-      if (strlen(label) >= EXT4FS_LABEL_MAX)
+      if (strlen(label) >= EXT4FS_VOLUME_NAME_MAX)
         errx(1, "-L argument is too long (%d bytes max)",
-             EXT4FS_LABEL_MAX);
+             EXT4FS_VOLUME_NAME_MAX);
       break;
     default: usage();
     }
@@ -191,7 +194,6 @@ int main (int argc, char **argv)
   now = time(NULL);
   sb = (struct ext4fs_super_block *) (buffer +
                                       EXT4FS_SUPER_BLOCK_OFFSET);
-  sb->sb_magic = EXT4FS_MAGIC;
   sb->sb_inodes_count = htole32(inodes_total);
   sb->sb_blocks_count_lo = htole32((uint32_t)
                                    (blocks_total & 0xFFFFFFFF));
@@ -207,36 +209,100 @@ int main (int argc, char **argv)
   sb->sb_first_data_block = htole32(block_size > 1024 ? 0 : 1);
   // log2(block_size) - 10
   sb->sb_log_block_size = htole32(__builtin_ctz(block_size) - 10);
+  sb->sb_log_cluster_size = sb->sb_log_block_size;
   sb->sb_blocks_per_group = htole32(blocks_per_group);
-  // assuming 1 group for now
+  sb->sb_clusters_per_group = sb->sb_blocks_per_group;
   sb->sb_inodes_per_group = htole32(inodes_per_group);
-  sb->sb_inode_size = htole16(inode_size);
-  sb->sb_first_non_reserved_inode = htole32(inodes_reserved); // first non-reserved inode
-  sb->sb_state = htole16(EXT4FS_VALID_FS);
+  sb->sb_mount_time_lo = htole32(now);
+  sb->sb_mount_time_hi = (now >> 32) & 0xFF;
+  sb->sb_write_time_lo = htole32(now);
+  sb->sb_write_time_hi = (now >> 32) & 0xFF;
+  sb->sb_mount_count = htole16(0);
+  sb->sb_max_mount_count_before_fsck = (int16_t) htole16(-1);
+  sb->sb_magic = htole16(EXT4FS_MAGIC);
+  sb->sb_state = htole16(EXT4FS_STATE_VALID);
   sb->sb_errors = htole16(EXT4FS_ERRORS_CONTINUE);
-  sb->sb_revision_level = htole32(EXT4FS_REV_DYNAMIC);
   sb->sb_revision_level_minor = htole16(EXT4FS_REV_MINOR);
-  sb->sb_mount_time = htole32(now);
-  sb->sb_write_time = htole32(now);
-  sb->sb_newfs_time = htole32(now);
-  sb->sb_check_time = htole32(now);
+  sb->sb_check_time_lo = htole32(now);
+  sb->sb_check_time_hi = (now >> 32) & 0xFF;
   sb->sb_check_interval = htole32(6 * 30 * 24 * 60 * 60); // 6 months
+  sb->sb_creator_os = htole32(EXT4FS_OS_OPENBSD);
+  sb->sb_revision_level = htole32(EXT4FS_REV_DYNAMIC);
+  sb->sb_default_reserved_uid = htole16(0);
+  sb->sb_default_reserved_gid = htole16(0);
+  sb->sb_first_non_reserved_inode = htole32(inodes_reserved); // first non-reserved inode
+  sb->sb_inode_size = htole16(inode_size);
+  sb->sb_block_group_id = htole16(block_group_id);
+  sb->sb_feature_compat = htole32(0);
   sb->sb_feature_incompat = htole32(EXT4FS_FEATURE_INCOMPAT_EXTENTS |
                                     EXT4FS_FEATURE_INCOMPAT_64BIT);
   sb->sb_feature_ro_compat = htole32(EXT4FS_FEATURE_RO_COMPAT_SPARSE_SUPER);
-  sb->sb_group_descriptor_size = htole16(gd_size);
-  sb->sb_creator_os = htole32(EXT4FS_OS_OPENBSD);
-  sb->sb_default_reserved_uid = htole16(0);
-  sb->sb_default_reserved_gid = htole16(0);
-  sb->sb_max_mount_count_before_fsck = (int16_t) htole16(-1);
-  sb->sb_mount_count = htole16(0);
-  strncpy(sb->sb_volume_name, "ext4 disk", sizeof(sb->sb_volume_name));
   uuid_v4_gen(sb->sb_uuid);
-  printf("uuid: ");
-  uuid_print(sb->sb_uuid);
-  printf("\n");
-  sb->sb_block_group_id = htole16(0);
-  printf("\n");
+  strncpy(sb->sb_volume_name, "ext4fs test", sizeof(sb->sb_volume_name));
+  bzero(sb->sb_last_mounted, EXT4FS_LAST_MOUNTED_MAX);
+  sb->sb_algorithm_usage_bitmap = htole32(0);
+  sb->sb_preallocate_blocks = 0;
+  sb->sb_preallocate_dir_blocks = 0;
+  sb->sb_reserved_gdt_blocks = htole16(reserved_gdt_blocks);
+  bzero(sb->sb_journal_uuid, sizeof(sb->sb_journal_uuid));
+  sb->sb_journal_inode_number = htole32(0);
+  sb->sb_journal_device_number = htole32(0);
+  sb->sb_last_orphan = htole32(0);
+  bzero(sb->sb_hash_seed, sizeof(sb->sb_hash_seed));
+  sb->sb_default_hash_version = 0;
+  sb->sb_journal_backup_type = 0;
+  sb->sb_group_descriptor_size = htole16(gd_size);
+  sb->sb_default_mount_opts = htole32(0);
+  sb->sb_first_meta_block_group = htole32(0);
+  sb->sb_newfs_time_lo = htole32(now);
+  sb->sb_newfs_time_hi = (now >> 32) & 0xFF;
+  bzero(sb->sb_jnl_blocks, sizeof(sb->sb_jnl_blocks));
+  sb->sb_inode_size_extra_min = htole16(32);
+  sb->sb_inode_size_extra_want = htole16(32);
+  sb->sb_flags = htole32(0);
+  sb->sb_raid_stride_block_count = htole16(0);
+  sb->sb_mmp_interval = 0;
+  sb->sb_mmp_block = 0;
+  sb->sb_raid_stripe_width_block_count = htole32(0);
+  sb->sb_log_groups_per_flex = __builtin_ctz(groups_per_flex);
+  sb->sb_checksum_type = 0;
+  sb->sb_reserved_176 = 0;
+  sb->sb_kilobytes_written = htole64(0);
+  sb->sb_ext3_snapshot_inum = 0;
+  sb->sb_ext3_snapshot_id = 0;
+  sb->sb_ext3_snapshot_reserved_blocks_count = 0;
+  sb->sb_ext3_snapshot_list = 0;
+  sb->sb_error_count = 0;
+  sb->sb_first_error_time_lo = 0;
+  sb->sb_first_error_time_hi = 0;
+  sb->sb_first_error_inode = 0;
+  sb->sb_first_error_block = 0;
+  bzero(sb->sb_first_error_func, sizeof(sb->sb_first_error_func));
+  sb->sb_first_error_line = 0;
+  sb->sb_last_error_time_lo = 0;
+  sb->sb_last_error_time_hi = 0;
+  sb->sb_last_error_inode = 0;
+  sb->sb_last_error_line = 0;
+  sb->sb_last_error_block = 0;
+  bzero(sb->sb_last_error_func, sizeof(sb->sb_last_error_func));
+  bzero(sb->sb_mount_opts, sizeof(sb->sb_mount_opts));
+  sb->sb_user_quota_inum = 0;
+  sb->sb_group_quota_inum = 0;
+  sb->sb_overhead_clusters = 0;
+  sb->sb_backup_bgs[0] = 0;
+  sb->sb_backup_bgs[1] = 0;
+  bzero(sb->sb_encrypt_algos, sizeof(sb->sb_encrypt_algos));
+  bzero(sb->sb_encrypt_pw_salt, sizeof(sb->sb_encrypt_pw_salt));
+  sb->sb_lost_and_found_inode = htole32(0);
+  sb->sb_project_quota_inum = htole32(0);
+  sb->sb_checksum_seed = htole32(0);
+  sb->sb_first_error_code = 0;
+  sb->sb_last_error_code = 0;
+  sb->sb_encoding = htole16(EXT4FS_ENCODING_UTF8);
+  sb->sb_encoding_flags = htole16(EXT4FS_ENCODING_FLAG_STRICT_MODE);
+
+  sb->sb_checksum = 0;
+  
   if (lseek(fd, 0, SEEK_SET) < 0)
     err(1, "lseek(fd, 0, SEEK_SET)");
   done = 0;
