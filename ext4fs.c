@@ -35,6 +35,11 @@
 #include <ext4fs.h>
 #include <uuid.h>
 
+const s_value_name ext4fs_checksum_type_names[] = {
+  {EXT4FS_CHECKSUM_TYPE_CRC32C, "crc32c"},
+  {0, NULL}
+};
+
 const s_value_name ext4fs_encoding_names[] = {
   {EXT4FS_ENCODING_UTF8, "utf8"},
   {0, NULL}
@@ -575,12 +580,17 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_mmp_block: (U32) %u,\n"
          "                   sb_raid_stripe_width_block_count: (U32) %u,\n"
          "                   sb_log_groups_per_flex: %u,\t\t# %u,\n"
-         "                   }\n",
+         "                   sb_checksum_type: ",
          le16toh(sb->sb_raid_stride_block_count),
          le32toh(sb->sb_mmp_interval),
          le32toh(sb->sb_mmp_block),
          le32toh(sb->sb_raid_stripe_width_block_count),
          sb->sb_log_groups_per_flex, 1 << sb->sb_log_groups_per_flex);
+  ext4fs_inspect_flag_names(le16toh(sb->sb_checksum_type),
+                            ext4fs_checksum_type_names);
+  printf(",\n"
+         "                   sb_kilobytes_written: (U64) " CONFIGURE_FMT_UINT64 "}\n",
+         le64toh(sb->sb_kilobytes_written));
   return 0;
 }
 

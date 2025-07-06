@@ -30,6 +30,11 @@ typedef struct {
 #define EXT4FS_SUPER_BLOCK_SIZE 1024
 #define EXT4FS_VOLUME_NAME_MAX 16
 
+#define EXT4FS_CHECKSUM_TYPE_NONE    0x0000
+#define EXT4FS_CHECKSUM_TYPE_CRC32C  0x0001
+
+extern const s_value_name ext4fs_checksum_type_names[];
+     
 #define EXT4FS_ENCODING_NONE  0x0000  // No encoding: legacy behavior
 #define EXT4FS_ENCODING_UTF8  0x0001  // UTF-8 encoding, Unicode 12.1.0
 
