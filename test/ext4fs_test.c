@@ -18,17 +18,33 @@ long g_test_ko = 0;
 long g_test_ok = 0;
 long g_test_total = 0;
 
-#define TEST_ASSERT(test)                         \
-  do {                                            \
-    if (! (test)) {                               \
-      fprintf(stderr, "KO: %s\n", # test);        \
-      g_test_ko++;                                \
-      g_test_total++;                             \
-    }                                             \
-    else {                                        \
-      g_test_ok++;                                \
-      g_test_total++;                             \
-    }                                             \
+#define TEST_ASSERT(test)                                              \
+  do {                                                                 \
+    if (! (test)) {                                                    \
+      fprintf(stderr, "KO: %s\n", # test);                             \
+      g_test_ko++;                                                     \
+      g_test_total++;                                                  \
+    }                                                                  \
+    else {                                                             \
+      g_test_ok++;                                                     \
+      g_test_total++;                                                  \
+    }                                                                  \
+  } while (0)
+
+#define TEST_EQ(test, expected)                                        \
+  do {                                                                 \
+    int64_t i_test = (test);                                           \
+    int64_t i_expected = (expected);                                   \
+    if (! ((i_test) == (i_expected))) {                                \
+      fprintf(stderr, "KO: expected %s == %ld, got %ld instead\n",   \
+              # test, i_expected, i_test);                             \
+      g_test_ko++;                                                     \
+      g_test_total++;                                                  \
+    }                                                                  \
+    else {                                                             \
+      g_test_ok++;                                                     \
+      g_test_total++;                                                  \
+    }                                                                  \
   } while (0)
 
 void test_summary (void)
@@ -43,8 +59,16 @@ int main (int argc, char **argv)
 {
   (void) argc;
   (void) argv;
-  TEST_ASSERT(sizeof(struct ext4fs_super_block) == 1024);
-  TEST_ASSERT(sizeof(struct ext4fs_group_desc) == 64);
+  TEST_EQ(offsetof(struct ext4fs_super_block, sb_mount_opts),
+          0x200);
+  TEST_EQ(offsetof(struct ext4fs_super_block, sb_orphan_file_inum),
+          0x280);
+  TEST_EQ(offsetof(struct ext4fs_super_block, sb_checksum),
+          0x3FC);
+  TEST_EQ(sizeof(struct ext4fs_super_block),
+          1024);
+  TEST_EQ(sizeof(struct ext4fs_group_desc),
+          64);
   test_summary();
   return 0;
 }

@@ -22,13 +22,14 @@ typedef struct {
   const char *name;
 } s_value_name;
 
-#define EXT4FS_REV_DYNAMIC 1
-#define EXT4FS_REV_MINOR 0
-#define EXT4FS_LAST_MOUNTED_MAX 64
-#define EXT4FS_MAGIC 0xEF53
-#define EXT4FS_SUPER_BLOCK_OFFSET 1024
-#define EXT4FS_SUPER_BLOCK_SIZE 1024
-#define EXT4FS_VOLUME_NAME_MAX 16
+#define EXT4FS_FUNCTION_MAX  32
+#define EXT4FS_REV_DYNAMIC  1
+#define EXT4FS_REV_MINOR  0
+#define EXT4FS_LAST_MOUNTED_MAX  64
+#define EXT4FS_MAGIC  0xEF53
+#define EXT4FS_SUPER_BLOCK_OFFSET  1024
+#define EXT4FS_SUPER_BLOCK_SIZE  1024
+#define EXT4FS_VOLUME_NAME_MAX  16
 
 #define EXT4FS_CHECKSUM_TYPE_NONE    0x0000
 #define EXT4FS_CHECKSUM_TYPE_CRC32C  0x0001
@@ -221,7 +222,7 @@ struct ext4fs_super_block {
   uint32_t sb_first_error_inode;
   // 0x1A0
   uint64_t sb_first_error_block;
-  char     sb_first_error_func[32];
+  char     sb_first_error_function[EXT4FS_FUNCTION_MAX];
   uint32_t sb_first_error_line;
   uint32_t sb_last_error_time_lo;
   // 0x1D0
@@ -229,7 +230,7 @@ struct ext4fs_super_block {
   uint32_t sb_last_error_line;
   uint64_t sb_last_error_block;
   // 0x1E0
-  uint8_t  sb_last_error_func[32];
+  char     sb_last_error_function[EXT4FS_FUNCTION_MAX];
   // 0x200
   uint8_t  sb_mount_opts[64];
   // 0x240
@@ -255,7 +256,8 @@ struct ext4fs_super_block {
   uint16_t sb_encoding_flags;
   // 0x280
   uint16_t sb_orphan_file_inum;
-  uint32_t sb_reserved_284[94];
+  uint16_t sb_reserved_284;
+  uint32_t sb_reserved_288[94];
   uint32_t sb_checksum;
 } __attribute__((packed));
 
@@ -298,8 +300,13 @@ int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
 int ext4fs_check_time (const struct ext4fs_super_block *sb,
                        uint64_t *dest);
 
+#ifdef OpenBSD
 struct disklabel *
 ext4fs_disklabel_get (struct disklabel *dl, int fd);
+#endif
+
+int ext4fs_first_error_time (const struct ext4fs_super_block *sb,
+                             uint64_t *dest);
 
 int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
                               uint64_t *dest);
@@ -329,6 +336,9 @@ int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
                                const struct ext4fs_group_desc *gd);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
+
+int ext4fs_last_error_time (const struct ext4fs_super_block *sb,
+                            uint64_t *dest);
 
 int ext4fs_mount_time (const struct ext4fs_super_block *sb,
                        uint64_t *dest);

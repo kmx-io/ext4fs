@@ -277,14 +277,14 @@ int main (int argc, char **argv)
   sb->sb_first_error_time_hi = 0;
   sb->sb_first_error_inode = 0;
   sb->sb_first_error_block = 0;
-  bzero(sb->sb_first_error_func, sizeof(sb->sb_first_error_func));
+  bzero(sb->sb_first_error_function, EXT4FS_FUNCTION_MAX);
   sb->sb_first_error_line = 0;
   sb->sb_last_error_time_lo = 0;
   sb->sb_last_error_time_hi = 0;
   sb->sb_last_error_inode = 0;
   sb->sb_last_error_line = 0;
   sb->sb_last_error_block = 0;
-  bzero(sb->sb_last_error_func, sizeof(sb->sb_last_error_func));
+  bzero(sb->sb_last_error_function, EXT4FS_FUNCTION_MAX);
   bzero(sb->sb_mount_opts, sizeof(sb->sb_mount_opts));
   sb->sb_user_quota_inum = 0;
   sb->sb_group_quota_inum = 0;

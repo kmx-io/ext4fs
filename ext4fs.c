@@ -234,6 +234,23 @@ ext4fs_disklabel_get (struct disklabel *dl, int fd)
 
 #endif /* OpenBSD */
 
+int ext4fs_first_error_time (const struct ext4fs_super_block *sb,
+                             uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_first_error_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_first_error_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_first_error_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) sb->sb_first_error_time_hi << 32;
+  return 0;
+}
+
 int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
                               uint64_t *dest)
 {
@@ -405,8 +422,12 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
 {
   uint64_t blocks_count;
   uint64_t check_time;
+  uint64_t first_error_time;
+  char     first_error_function[EXT4FS_FUNCTION_MAX + 1] = {0};
   uint64_t free_blocks_count;
-  char last_mounted[EXT4FS_LAST_MOUNTED_MAX + 1] = {0};
+  char     last_error_function[EXT4FS_FUNCTION_MAX + 1] = {0};
+  uint64_t last_error_time;
+  char     last_mounted[EXT4FS_LAST_MOUNTED_MAX + 1] = {0};
   uint64_t mount_time;
   uint64_t newfs_time;
   uint64_t reserved_blocks_count;
@@ -414,6 +435,8 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   char str_mount_time[32];
   char str_write_time[32];
   char str_newfs_time[32];
+  char str_first_error_time[32];
+  char str_last_error_time[32];
   char volume_name[EXT4FS_VOLUME_NAME_MAX + 1] = {0};
   uint64_t write_time;
   if (ext4fs_blocks_count(sb, &blocks_count) ||
@@ -423,17 +446,27 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
       ext4fs_write_time(sb, &write_time) ||
       ext4fs_check_time(sb, &check_time) ||
       ext4fs_newfs_time(sb, &newfs_time) ||
-      ext4fs_time_to_str(mount_time,
-                         str_mount_time, sizeof(str_mount_time)) ||
-      ext4fs_time_to_str(write_time,
-                         str_write_time, sizeof(str_write_time)) ||
-      ext4fs_time_to_str(check_time,
-                         str_check_time, sizeof(str_check_time)) ||
-      ext4fs_time_to_str(newfs_time,
-                         str_newfs_time, sizeof(str_newfs_time)))
+      ext4fs_first_error_time(sb, &first_error_time) ||
+      ext4fs_last_error_time(sb, &last_error_time) ||
+      ext4fs_time_to_str(mount_time, str_mount_time,
+                         sizeof(str_mount_time)) ||
+      ext4fs_time_to_str(write_time, str_write_time,
+                         sizeof(str_write_time)) ||
+      ext4fs_time_to_str(check_time, str_check_time,
+                         sizeof(str_check_time)) ||
+      ext4fs_time_to_str(newfs_time, str_newfs_time,
+                         sizeof(str_newfs_time)) ||
+      ext4fs_time_to_str(first_error_time, str_first_error_time,
+                         sizeof(str_first_error_time)) ||
+      ext4fs_time_to_str(last_error_time, str_last_error_time,
+                         sizeof(str_last_error_time)))
     return -1;
   strlcpy(volume_name, sb->sb_volume_name, sizeof(volume_name));
   strlcpy(last_mounted, sb->sb_last_mounted, sizeof(last_mounted));
+  strlcpy(first_error_function, sb->sb_first_error_function,
+          sizeof(first_error_function));
+  strlcpy(last_error_function, sb->sb_last_error_function,
+          sizeof(last_error_function));
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
          "                   sb_blocks_count: (U64) "
          CONFIGURE_FMT_UINT64 ",\n"
@@ -478,7 +511,8 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   ext4fs_inspect_errors(le16toh(sb->sb_errors));
   printf(",\n"
          "                   sb_revision_level_minor: (U16) %u,\n"
-         "                   sb_check_time: (U64) " CONFIGURE_FMT_UINT64 ",\t# %s\n"
+         "                   sb_check_time: (U64) "
+         CONFIGURE_FMT_UINT64 ",\t# %s\n"
          "                   sb_check_interval: (U32) %u,\n"
          "                   sb_creator_os: (U32) %u,\t\t# ",
          le32toh(sb->sb_revision_level_minor),
@@ -589,8 +623,44 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   ext4fs_inspect_flag_names(le16toh(sb->sb_checksum_type),
                             ext4fs_checksum_type_names);
   printf(",\n"
-         "                   sb_kilobytes_written: (U64) " CONFIGURE_FMT_UINT64 "}\n",
-         le64toh(sb->sb_kilobytes_written));
+         "                   sb_kilobytes_written: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_error_count: (U32) %u,\n"
+         "                   sb_first_error_time: (U64) "
+         CONFIGURE_FMT_UINT64 ",\t# %s\n"
+         "                   sb_first_error_inode: (U32) %u,\n"
+         "                   sb_first_error_block: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_first_error_function: %s,\n"
+         "                   sb_last_error_time: (U64) "
+         CONFIGURE_FMT_UINT64 ",\t# %s\n"
+         "                   sb_last_error_function: %s,\n"
+         "                   }\n",
+         le64toh(sb->sb_kilobytes_written),
+         le32toh(sb->sb_error_count),
+         first_error_time, str_first_error_time,
+         le32toh(sb->sb_first_error_inode),
+         le64toh(sb->sb_first_error_block),
+         first_error_function,
+         last_error_time, str_last_error_time,
+         first_error_function);
+  return 0;
+}
+
+int ext4fs_last_error_time (const struct ext4fs_super_block *sb,
+                             uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_last_error_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_last_error_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_last_error_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) sb->sb_last_error_time_hi << 32;
   return 0;
 }
 
