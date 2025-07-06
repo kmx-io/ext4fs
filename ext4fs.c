@@ -153,21 +153,27 @@ int ext4fs_64bit (const struct ext4fs_super_block *sb)
           EXT4FS_FEATURE_INCOMPAT_64BIT) ? 1 : 0;
 }
 
-int ext4fs_block_bitmap (const struct ext4fs_super_block *sb,
-                         const struct ext4fs_group_desc *gd,
-                         uint64_t *dest)
+int
+ext4fs_block_bitmap_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest)
 {
-  if (! gd) {
-    warnx("ext4fs_block_bitmap: NULL group descriptor");
+  if (! sb) {
+    warnx("ext4fs_block_bitmap_block: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_block_bitmap_block: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_block_bitmap: NULL dest");
+    warnx("ext4fs_block_bitmap_block: NULL dest");
     return -1;
   }
-  *dest = le32toh(gd->gd_block_bitmap_lo);
+  *dest = le32toh(bgd->bgd_block_bitmap_block_lo);
   if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(gd->gd_block_bitmap_hi) << 32;
+    *dest |= (uint64_t) le32toh(bgd->bgd_block_bitmap_block_hi) << 32;
   return 0;
 }
 
@@ -268,10 +274,11 @@ int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-struct ext4fs_group_desc *
-ext4fs_group_desc_read (struct ext4fs_group_desc *gd,
-                        int fd,
-                        const struct ext4fs_super_block *sb)
+struct ext4fs_block_group_descriptor *
+ext4fs_block_group_descriptor_read
+(struct ext4fs_block_group_descriptor *bgd,
+ int fd,
+ const struct ext4fs_super_block *sb)
 {
   uint32_t block_size;
   ssize_t done;
@@ -287,9 +294,9 @@ ext4fs_group_desc_read (struct ext4fs_group_desc *gd,
     return NULL;
   }
   done = 0;
-  remaining = sizeof(struct ext4fs_group_desc);
+  remaining = sizeof(struct ext4fs_block_group_descriptor);
   while (remaining > 0) {
-    r = read(fd, (char *) gd + done, remaining);
+    r = read(fd, (char *) bgd + done, remaining);
     if (r < 0) {
       warn("read super block %ld", remaining);
       return NULL;
@@ -297,48 +304,60 @@ ext4fs_group_desc_read (struct ext4fs_group_desc *gd,
     done += r;
     remaining -= r;
   }
-  return gd;
+  return bgd;
 }
 
-int ext4fs_inode_bitmap (const struct ext4fs_super_block *sb,
-                         const struct ext4fs_group_desc *gd,
-                         uint64_t *dest)
+int
+ext4fs_inode_bitmap_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest)
 {
-  if (! gd) {
-    warnx("ext4fs_inode_bitmap: NULL group descriptor");
+  if (! sb) {
+    warnx("ext4fs_inode_bitmap_block: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_inode_bitmap_block: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_inode_bitmap: NULL dest");
+    warnx("ext4fs_inode_bitmap_block: NULL dest");
     return -1;
   }
-  *dest = le32toh(gd->gd_inode_bitmap_lo);
+  *dest = le32toh(bgd->bgd_inode_bitmap_block_lo);
   if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(gd->gd_inode_bitmap_hi) << 32;
+    *dest |= (uint64_t) le32toh(bgd->bgd_inode_bitmap_block_hi) << 32;
   return 0;
 }
 
-int ext4fs_inode_table (const struct ext4fs_super_block *sb,
-                        const struct ext4fs_group_desc *gd,
-                        uint64_t *dest)
+int
+ext4fs_inode_table_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest)
 {
-  if (! gd) {
-    warnx("ext4fs_inode_table: NULL group descriptor");
+  if (! sb) {
+    warnx("ext4fs_inode_table_block: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_inode_table_block: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_inode_table: NULL dest");
+    warnx("ext4fs_inode_table_block: NULL dest");
     return -1;
   }
-  *dest = le32toh(gd->gd_inode_table_lo);
+  *dest = le32toh(bgd->bgd_inode_table_block_lo);
   if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(gd->gd_inode_table_hi) << 32;
+    *dest |= (uint64_t) le32toh(bgd->bgd_inode_table_block_hi) << 32;
   return 0;
 }
 
 int ext4fs_inspect (const char *dev, int fd)
 {
-  struct ext4fs_group_desc gd = {0};
+  struct ext4fs_block_group_descriptor bgd = {0};
   struct ext4fs_super_block sb = {0};
   uint64_t size = 0;
   if (ext4fs_size(dev, fd, &size) ||
@@ -349,9 +368,9 @@ int ext4fs_inspect (const char *dev, int fd)
     return -1;
   if (ext4fs_inspect_super_block(&sb))
     return -1;
-  if (! ext4fs_group_desc_read(&gd, fd, &sb))
+  if (! ext4fs_block_group_descriptor_read(&bgd, fd, &sb))
     return -1;
-  if (ext4fs_inspect_group_desc(&sb, &gd))
+  if (ext4fs_inspect_block_group_descriptor(&sb, &bgd))
     return -1;
   printf("EOF\n");
   return 0;
@@ -399,22 +418,24 @@ void ext4fs_inspect_errors (uint16_t errors)
     printf("(U16) %u", errors);
 }
     
-int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
-                               const struct ext4fs_group_desc *gd)
+int
+ext4fs_inspect_block_group_descriptor
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *gd)
 {
-  uint64_t block_bitmap;
-  uint64_t inode_bitmap;
-  uint64_t inode_table;
-  if (ext4fs_block_bitmap(sb, gd, &block_bitmap) ||
-      ext4fs_inode_bitmap(sb, gd, &inode_bitmap) ||
-      ext4fs_inode_table(sb, gd, &inode_table))
+  uint64_t block_bitmap_block;
+  uint64_t inode_bitmap_block;
+  uint64_t inode_table_block;
+  if (ext4fs_block_bitmap_block(sb, gd, &block_bitmap_block) ||
+      ext4fs_inode_bitmap_block(sb, gd, &inode_bitmap_block) ||
+      ext4fs_inode_table_block(sb, gd, &inode_table_block))
     return -1;
-  printf("%%Ext4fs.GroupDesc{gd_block_bitmap: " CONFIGURE_FMT_UINT64 ",\n"
-         "                  gd_inode_bitmap: " CONFIGURE_FMT_UINT64 ",\n"
-         "                  gd_inode_table: " CONFIGURE_FMT_UINT64 "}\n",
-         block_bitmap,
-         inode_bitmap,
-         inode_table);
+  printf("%%Ext4fs.GroupDesc{gd_block_bitmap_block: " CONFIGURE_FMT_UINT64 ",\n"
+         "                  gd_inode_bitmap_block: " CONFIGURE_FMT_UINT64 ",\n"
+         "                  gd_inode_table_block: " CONFIGURE_FMT_UINT64 "}\n",
+         block_bitmap_block,
+         inode_bitmap_block,
+         inode_table_block);
   return 0;
 }
 
@@ -550,14 +571,14 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_algorithm_usage_bitmap: (U32) %u,\n"
          "                   sb_preallocate_blocks: (U8) %u,\n"
          "                   sb_preallocate_dir_blocks: (U8) %u,\n"
-         "                   sb_reserved_gdt_blocks: (U16) %u,\n"
+         "                   sb_reserved_bgdt_blocks: (U16) %u,\n"
          "                   sb_journal_uuid: ",
          volume_name,
          last_mounted,
          le32toh(sb->sb_algorithm_usage_bitmap),
          sb->sb_preallocate_blocks,
          sb->sb_preallocate_dir_blocks,
-         le16toh(sb->sb_reserved_gdt_blocks));
+         le16toh(sb->sb_reserved_bgdt_blocks));
   uuid_print(sb->sb_journal_uuid);
   printf(",\n"
          "                   sb_journal_inode_number: (U32) %u,\n"

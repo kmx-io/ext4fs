@@ -59,6 +59,8 @@ int main (int argc, char **argv)
 {
   (void) argc;
   (void) argv;
+  TEST_EQ(offsetof(struct ext4fs_super_block, sb_default_mount_opts),
+          0x100);
   TEST_EQ(offsetof(struct ext4fs_super_block, sb_mount_opts),
           0x200);
   TEST_EQ(offsetof(struct ext4fs_super_block, sb_orphan_file_inode),
@@ -67,7 +69,7 @@ int main (int argc, char **argv)
           0x3FC);
   TEST_EQ(sizeof(struct ext4fs_super_block),
           1024);
-  TEST_EQ(sizeof(struct ext4fs_group_desc),
+  TEST_EQ(sizeof(struct ext4fs_block_group_descriptor),
           64);
   test_summary();
   return 0;

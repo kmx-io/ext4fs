@@ -179,7 +179,7 @@ struct ext4fs_super_block {
   uint32_t sb_algorithm_usage_bitmap;
   uint8_t  sb_preallocate_blocks;
   uint8_t  sb_preallocate_dir_blocks;
-  uint16_t sb_reserved_gdt_blocks;  // Per group desc for online growth
+  uint16_t sb_reserved_bgdt_blocks;
   // 0xD0
   uint8_t  sb_journal_uuid[16];     // UUID of journal superblock
   // 0xE0
@@ -262,35 +262,37 @@ struct ext4fs_super_block {
   uint32_t sb_checksum;
 } __attribute__((packed));
 
-struct ext4fs_group_desc {
-  uint32_t gd_block_bitmap_lo;   // Block ID of block bitmap
-  uint32_t gd_inode_bitmap_lo;   // Block ID of inode bitmap
-  uint32_t gd_inode_table_lo;    // Starting block of inode table
-  uint16_t gd_free_blocks_count; // Free blocks in this group
-  uint16_t gd_free_inodes_count; // Free inodes in this group
-  uint16_t gd_used_dirs_count;   // Number of directories in this group
-  uint16_t gd_flags;
-  uint32_t gd_exclude_bitmap_lo; // Optional (sparse allocation)
-  uint16_t gd_block_bitmap_csum;
-  uint16_t gd_inode_bitmap_csum;
-  uint16_t gd_itable_unused;
-  uint16_t gd_checksum;
-  uint32_t gd_block_bitmap_hi;
-  uint32_t gd_inode_bitmap_hi;
-  uint32_t gd_inode_table_hi;
-  uint16_t gd_free_blocks_count_hi;
-  uint16_t gd_free_inodes_count_hi;
-  uint16_t gd_used_dirs_count_hi;
-  uint16_t gd_itable_unused_hi;
-  uint32_t gd_exclude_bitmap_hi;
-  uint16_t gd_block_bitmap_csum_hi;
-  uint16_t gd_inode_bitmap_csum_hi;
-  uint32_t gd_reserved;
+struct ext4fs_block_group_descriptor {
+  uint32_t bgd_block_bitmap_block_lo;
+  uint32_t bgd_inode_bitmap_block_lo;
+  uint32_t bgd_inode_table_block_lo;
+  uint16_t bgd_free_blocks_count_lo;
+  uint16_t bgd_free_inodes_count_lo;
+  uint16_t bgd_used_dirs_count_lo;
+  uint16_t bgd_flags;
+  uint32_t bgd_exclude_bitmap_block_lo;
+  uint16_t bgd_block_bitmap_checksum_lo;
+  uint16_t bgd_inode_bitmap_checksum_lo;
+  uint16_t bgd_itable_unused;
+  uint16_t bgd_checksum;
+  uint32_t bgd_block_bitmap_block_hi;
+  uint32_t bgd_inode_bitmap_block_hi;
+  uint32_t bgd_inode_table_block_hi;
+  uint16_t bgd_free_blocks_count_hi;
+  uint16_t bgd_free_inodes_count_hi;
+  uint16_t bgd_used_dirs_count_hi;
+  uint16_t bgd_inode_table_unused_hi;
+  uint32_t bgd_exclude_bitmap_block_hi;
+  uint16_t bgd_block_bitmap_checksum_hi;
+  uint16_t bgd_inode_bitmap_checksum_hi;
+  uint32_t bgd_reserved;
 } __attribute__((packed));
 
-int ext4fs_block_bitmap (const struct ext4fs_super_block *sb,
-                         const struct ext4fs_group_desc *gd,
-                         uint64_t *dest);
+int
+ext4fs_block_bitmap_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *gd,
+ uint64_t *dest);
 
 int ext4fs_block_size (const struct ext4fs_super_block *sb,
                        uint32_t *dest);
@@ -302,9 +304,12 @@ int ext4fs_check_time (const struct ext4fs_super_block *sb,
                        uint64_t *dest);
 
 #ifdef OpenBSD
+
 struct disklabel *
-ext4fs_disklabel_get (struct disklabel *dl, int fd);
-#endif
+ext4fs_disklabel_get
+(struct disklabel *dl, int fd);
+
+#endif // OpenBSD
 
 int ext4fs_first_error_time (const struct ext4fs_super_block *sb,
                              uint64_t *dest);
@@ -312,18 +317,21 @@ int ext4fs_first_error_time (const struct ext4fs_super_block *sb,
 int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
                               uint64_t *dest);
 
-struct ext4fs_group_desc *
-ext4fs_group_desc_read (struct ext4fs_group_desc *gd,
-                        int fd,
-                        const struct ext4fs_super_block *sb);
+struct ext4fs_block_group_descriptor *
+ext4fs_block_group_descriptor_read
+(struct ext4fs_block_group_descriptor *gd, int fd,
+ const struct ext4fs_super_block *sb);
 
-int ext4fs_inode_bitmap (const struct ext4fs_super_block *sb,
-                         const struct ext4fs_group_desc *gd,
-                         uint64_t *dest);
+int
+ext4fs_inode_bitmap
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *gd,
+ uint64_t *dest);
 
-int ext4fs_inode_table (const struct ext4fs_super_block *sb,
-                        const struct ext4fs_group_desc *gd,
-                        uint64_t *dest);
+int ext4fs_inode_table
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *gd,
+ uint64_t *dest);
 
 int ext4fs_inspect (const char *dev, int fd);
 
@@ -331,10 +339,13 @@ void ext4fs_inspect_creator_os (uint16_t creator_os);
 
 void ext4fs_inspect_errors (uint16_t errors);
 
-int ext4fs_inspect_flags_names (uint32_t flags, const s_value_name *names);
+int ext4fs_inspect_flags_names (uint32_t flags,
+                                const s_value_name *names);
 
-int ext4fs_inspect_group_desc (const struct ext4fs_super_block *sb,
-                               const struct ext4fs_group_desc *gd);
+int
+ext4fs_inspect_block_group_descriptor
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *gd);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 

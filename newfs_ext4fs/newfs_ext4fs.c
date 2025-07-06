@@ -37,34 +37,48 @@ static char *progname = NULL;
 
 void arc4random_buf(void *buf, size_t n);
 
-void group_desc_init (struct ext4fs_group_desc *gd,
-                      uint32_t block_bitmap_block,
-                      uint32_t inode_bitmap_block,
-                      uint32_t inode_table_start,
-                      uint32_t free_blocks,
-                      uint32_t free_inodes,
-                      uint16_t used_dirs);
+void block_group_descriptor_init
+(struct ext4fs_block_group_descriptor *bgd,
+ uint64_t block_bitmap_block,
+ uint64_t inode_bitmap_block,
+ uint64_t inode_table_start,
+ uint32_t free_blocks,
+ uint32_t free_inodes,
+ uint32_t used_dirs);
 
 static void usage (void);
 
-void group_desc_init (struct ext4fs_group_desc *gd,
-                      uint32_t block_bitmap_block,
-                      uint32_t inode_bitmap_block,
-                      uint32_t inode_table_start,
-                      uint32_t free_blocks,
-                      uint32_t free_inodes,
-                      uint16_t used_dirs)
+void block_group_descriptor_init
+(struct ext4fs_block_group_descriptor *bgd,
+ uint64_t block_bitmap_block,
+ uint64_t inode_bitmap_block,
+ uint64_t inode_table_block,
+ uint32_t free_blocks_count,
+ uint32_t free_inodes_count,
+ uint32_t used_dirs_count)
 {
-  memset(gd, 0, sizeof(*gd));
-  gd->gd_block_bitmap_lo = htole32(block_bitmap_block);
-  gd->gd_inode_bitmap_lo = htole32(inode_bitmap_block);
-  gd->gd_inode_table_lo = htole32(inode_table_start);
-  gd->gd_free_blocks_count = htole16((uint16_t) (free_blocks & 0xFFFF));
-  gd->gd_free_inodes_count = htole16((uint16_t) (free_inodes & 0xFFFF));
-  gd->gd_used_dirs_count = htole16(used_dirs);
-  gd->gd_free_blocks_count_hi = htole16((uint16_t) (free_blocks >> 16));
-  gd->gd_free_inodes_count_hi = htole16((uint16_t) (free_inodes >> 16));
-  gd->gd_used_dirs_count_hi = 0;
+  bzero(bgd, sizeof(*bgd));
+  bgd->bgd_block_bitmap_block_lo = htole32(block_bitmap_block);
+  bgd->bgd_block_bitmap_block_hi = htole32((block_bitmap_block >> 32) &
+                                           0xFFFFFFFF);
+  bgd->bgd_inode_bitmap_block_lo = htole32(inode_bitmap_block);
+  bgd->bgd_inode_bitmap_block_hi = htole32((inode_bitmap_block >> 32) &
+                                           0xFFFFFFFF);
+  bgd->bgd_inode_table_block_lo = htole32(inode_table_block);
+  bgd->bgd_inode_table_block_hi = htole32((inode_table_block >> 32) &
+                                          0xFFFFFFFF);
+  bgd->bgd_free_blocks_count_lo = htole16((uint16_t)
+                                          (free_blocks_count & 0xFFFF));
+  bgd->bgd_free_blocks_count_hi = htole16((uint16_t)
+                                          (free_blocks_count >> 16));
+  bgd->bgd_free_inodes_count_lo = htole16((uint16_t)
+                                          (free_inodes_count & 0xFFFF));
+  bgd->bgd_free_inodes_count_hi = htole16((uint16_t)
+                                          (free_inodes_count >> 16));
+  bgd->bgd_used_dirs_count_lo = htole16((uint16_t)
+                                        (used_dirs_count & 0xFFFF));
+  bgd->bgd_used_dirs_count_hi = htole16((uint16_t)
+                                        (used_dirs_count >> 16));
 }
 
 void parse_opt_u32 (uint32_t *dest, const char *str,
@@ -103,6 +117,9 @@ static void usage (void) {
 
 int main (int argc, char **argv)
 {
+  struct ext4fs_block_group_descriptor *bgdt;
+  uint32_t                              bgdt_offset;
+  uint32_t                              bgdt_size;
   uint32_t block_bitmap_block;
   uint16_t block_group_id = 0;
   uint32_t block_groups_count;
@@ -116,10 +133,7 @@ int main (int argc, char **argv)
   const char *device = NULL;
   ssize_t done;
   int fd;
-  const uint32_t            gd_size = sizeof(struct ext4fs_group_desc);
-  struct ext4fs_group_desc *gdt;
-  uint32_t                  gdt_offset;
-  uint32_t                  gdt_size;
+  const uint32_t bgd_size = sizeof(struct ext4fs_block_group_descriptor);
   uint32_t groups_per_flex = 16;
   uint32_t inode_bitmap_block;
   uint32_t inode_ratio = 16384; // One inode per 16 KB
@@ -134,7 +148,7 @@ int main (int argc, char **argv)
   time_t now;
   size_t remaining;
   uint64_t reserved_blocks;
-  uint16_t reserved_gdt_blocks = 1024;
+  uint16_t reserved_bgdt_blocks = 1024;
   struct ext4fs_super_block *sb;
   uint32_t                   sb_size;
   uint64_t size;
@@ -243,7 +257,7 @@ int main (int argc, char **argv)
   sb->sb_algorithm_usage_bitmap = htole32(0);
   sb->sb_preallocate_blocks = 0;
   sb->sb_preallocate_dir_blocks = 0;
-  sb->sb_reserved_gdt_blocks = htole16(reserved_gdt_blocks);
+  sb->sb_reserved_bgdt_blocks = htole16(reserved_bgdt_blocks);
   bzero(sb->sb_journal_uuid, sizeof(sb->sb_journal_uuid));
   sb->sb_journal_inode_number = htole32(0);
   sb->sb_journal_device_number = htole32(0);
@@ -251,7 +265,7 @@ int main (int argc, char **argv)
   bzero(sb->sb_hash_seed, sizeof(sb->sb_hash_seed));
   sb->sb_default_hash_version = 0;
   sb->sb_journal_backup_type = 0;
-  sb->sb_group_descriptor_size = htole16(gd_size);
+  sb->sb_group_descriptor_size = htole16(bgd_size);
   sb->sb_default_mount_opts = htole32(0);
   sb->sb_first_meta_block_group = htole32(0);
   sb->sb_newfs_time_lo = htole32(now);
@@ -315,13 +329,13 @@ int main (int argc, char **argv)
     remaining -= w;
   }
   free(buffer);
-  gdt_offset = sb_size;
-  gdt_size = (gd_size * block_groups_count + (block_size - 1)) /
+  bgdt_offset = sb_size;
+  bgdt_size = (bgd_size * block_groups_count + (block_size - 1)) /
     block_size * block_size;
-  buffer = calloc(1, gdt_size);
+  buffer = calloc(1, bgdt_size);
   if (! buffer)
-    err(1, "calloc: %d", gdt_size);
-  block_bitmap_block = (gdt_offset + gdt_size) / block_size;
+    err(1, "calloc: %d", bgdt_size);
+  block_bitmap_block = (bgdt_offset + bgdt_size) / block_size;
   inode_bitmap_block = block_bitmap_block + 1;
   inode_table_start = inode_bitmap_block + 1;
   inode_table_blocks = (inodes_per_group * inode_size +
@@ -331,12 +345,12 @@ int main (int argc, char **argv)
   blocks_free = blocks_per_group -
     (2 + inode_table_blocks + blocks_data);
   used_dirs = 1;
-  gdt = (struct ext4fs_group_desc *) buffer;
-  group_desc_init(gdt, block_bitmap_block, inode_bitmap_block,
-                  inode_table_start, blocks_free, inodes_free,
-                  used_dirs);
+  bgdt = (struct ext4fs_block_group_descriptor *) buffer;
+  block_group_descriptor_init(bgdt, block_bitmap_block,
+                              inode_bitmap_block, inode_table_start,
+                              blocks_free, inodes_free, used_dirs);
   done = 0;
-  remaining = gd_size;
+  remaining = bgd_size;
   while (remaining > 0) {
     w = write(fd, (char *) buffer + done, remaining);
     if (w < 0)
