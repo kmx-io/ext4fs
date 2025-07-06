@@ -27,6 +27,7 @@ typedef struct {
 #define EXT4FS_REV_MINOR  0
 #define EXT4FS_LAST_MOUNTED_MAX  64
 #define EXT4FS_MAGIC  0xEF53
+#define EXT4FS_MOUNT_OPTS_MAX  64
 #define EXT4FS_SUPER_BLOCK_OFFSET  1024
 #define EXT4FS_SUPER_BLOCK_SIZE  1024
 #define EXT4FS_VOLUME_NAME_MAX  16
@@ -212,7 +213,7 @@ struct ext4fs_super_block {
   uint16_t sb_reserved_176;
   uint64_t sb_kilobytes_written;
   // 0x180
-  uint32_t sb_ext3_snapshot_inum;
+  uint32_t sb_ext3_snapshot_inode;
   uint32_t sb_ext3_snapshot_id;  
   uint64_t sb_ext3_snapshot_reserved_blocks_count;
   // 0x190
@@ -232,16 +233,16 @@ struct ext4fs_super_block {
   // 0x1E0
   char     sb_last_error_function[EXT4FS_FUNCTION_MAX];
   // 0x200
-  uint8_t  sb_mount_opts[64];
+  char     sb_mount_opts[EXT4FS_MOUNT_OPTS_MAX];
   // 0x240
-  uint32_t sb_user_quota_inum;
-  uint32_t sb_group_quota_inum;
+  uint32_t sb_user_quota_inode;
+  uint32_t sb_group_quota_inode;
   uint32_t sb_overhead_clusters;
-  uint32_t sb_backup_bgs[2];
+  uint32_t sb_backup_block_groups[2];
   uint8_t  sb_encrypt_algos[4];
   uint8_t  sb_encrypt_pw_salt[16];
   uint32_t sb_lost_and_found_inode;
-  uint32_t sb_project_quota_inum;
+  uint32_t sb_project_quota_inode;
   // 0x270
   uint32_t sb_checksum_seed;
   uint8_t  sb_write_time_hi;
@@ -255,7 +256,7 @@ struct ext4fs_super_block {
   uint16_t sb_encoding;
   uint16_t sb_encoding_flags;
   // 0x280
-  uint16_t sb_orphan_file_inum;
+  uint16_t sb_orphan_file_inode;
   uint16_t sb_reserved_284;
   uint32_t sb_reserved_288[94];
   uint32_t sb_checksum;

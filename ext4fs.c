@@ -428,6 +428,7 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   char     last_error_function[EXT4FS_FUNCTION_MAX + 1] = {0};
   uint64_t last_error_time;
   char     last_mounted[EXT4FS_LAST_MOUNTED_MAX + 1] = {0};
+  char     mount_opts[EXT4FS_MOUNT_OPTS_MAX + 1] = {0};
   uint64_t mount_time;
   uint64_t newfs_time;
   uint64_t reserved_blocks_count;
@@ -467,6 +468,8 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
           sizeof(first_error_function));
   strlcpy(last_error_function, sb->sb_last_error_function,
           sizeof(last_error_function));
+  strlcpy(mount_opts, sb->sb_mount_opts,
+          sizeof(mount_opts));
   printf("%%Ext4fs.SuperBlock{sb_inodes_count: (U32) %u,\n"
          "                   sb_blocks_count: (U64) "
          CONFIGURE_FMT_UINT64 ",\n"
@@ -582,15 +585,15 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_first_meta_block_group: (U32) %u,\n"
          "                   sb_newfs_time: (U64) "
          CONFIGURE_FMT_UINT64 ",\t# %s\n"
-         "                   sb_jnl_blocks: (U32) {0x%08x, 0x%08x,\n"
-         "                                         0x%08x, 0x%08x,\n"
-         "                                         0x%08x, 0x%08x,\n"
-         "                                         0x%08x, 0x%08x,\n"
-         "                                         0x%08x, 0x%08x,\n"
-         "                                         0x%08x, 0x%08x,\n"
-         "                                         0x%08x, 0x%08x,\n"
-         "                                         0x%08x, 0x%08x,\n"
-         "                                         0x%08x},\n"
+         "                   sb_jnl_blocks: (U32) {0x%08X, 0x%08X,\n"
+         "                                         0x%08X, 0x%08X,\n"
+         "                                         0x%08X, 0x%08X,\n"
+         "                                         0x%08X, 0x%08X,\n"
+         "                                         0x%08X, 0x%08X,\n"
+         "                                         0x%08X, 0x%08X,\n"
+         "                                         0x%08X, 0x%08X,\n"
+         "                                         0x%08X, 0x%08X,\n"
+         "                                         0x%08X},\n"
          "                   sb_inode_size_extra_min: (U16) %u,\n"
          "                   sb_inode_size_extra_want: (U16) %u,\n"
          "                   sb_flags: ",
@@ -631,19 +634,72 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                   sb_first_error_inode: (U32) %u,\n"
          "                   sb_first_error_block: (U64) "
          CONFIGURE_FMT_UINT64 ",\n"
-         "                   sb_first_error_function: %s,\n"
+         "                   sb_first_error_function: \"%s\",\n"
+         "                   sb_first_error_line: (U32) %u,\n"
          "                   sb_last_error_time: (U64) "
          CONFIGURE_FMT_UINT64 ",\t# %s\n"
-         "                   sb_last_error_function: %s,\n"
-         "                   }\n",
+         "                   sb_last_error_inode: (U32) %u,\n"
+         "                   sb_last_error_line: (U32) %u,\n"
+         "                   sb_last_error_block: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                   sb_last_error_function: \"%s\",\n"
+         "                   sb_mount_opts: \"%s\",\n"
+         "                   sb_user_quota_inode: (U32) %u,\n"
+         "                   sb_group_quota_inode: (U32) %u,\n"
+         "                   sb_overhead_clusters: (U32) %u,\n"
+         "                   sb_backup_block_groups: (U32) {%u, %u},\n"
+         "                   sb_encrypt_algos: (U8) {0x%02X, 0x%02X, 0x%02X, 0x%02X},\n"
+         "                   sb_encrypt_pw_salt: (U8) {0x%02X, 0x%02X, 0x%02X, 0x%02X,\n"
+         "                                             0x%02X, 0x%02X, 0x%02X, 0x%02X,\n"
+         "                                             0x%02X, 0x%02X, 0x%02X, 0x%02X,\n"
+         "                                             0x%02X, 0x%02X, 0x%02X, 0x%02X},\n"
+         "                   sb_lost_and_found_inode: (U32) %u,\n"
+         "                   sb_project_quota_inode: (U32) %u,\n"
+         "                   sb_checksum_seed: (U32) %u,\n"
+         "                   sb_first_error_code: %u,\n"
+         "                   sb_last_error_code: %u,\n"
+         "                   sb_encoding: ",
          le64toh(sb->sb_kilobytes_written),
          le32toh(sb->sb_error_count),
          first_error_time, str_first_error_time,
          le32toh(sb->sb_first_error_inode),
          le64toh(sb->sb_first_error_block),
          first_error_function,
+         le32toh(sb->sb_first_error_line),
          last_error_time, str_last_error_time,
-         first_error_function);
+         le32toh(sb->sb_last_error_inode),
+         le32toh(sb->sb_last_error_line),
+         le64toh(sb->sb_last_error_block),
+         last_error_function,
+         mount_opts,
+         le32toh(sb->sb_user_quota_inode),
+         le32toh(sb->sb_group_quota_inode),
+         le32toh(sb->sb_overhead_clusters),
+         le32toh(sb->sb_backup_block_groups[0]),
+         le32toh(sb->sb_backup_block_groups[1]),
+         sb->sb_encrypt_algos[0], sb->sb_encrypt_algos[1],
+         sb->sb_encrypt_algos[2], sb->sb_encrypt_algos[3],
+         sb->sb_encrypt_pw_salt[0], sb->sb_encrypt_pw_salt[1],
+         sb->sb_encrypt_pw_salt[2], sb->sb_encrypt_pw_salt[3],
+         sb->sb_encrypt_pw_salt[4], sb->sb_encrypt_pw_salt[5],
+         sb->sb_encrypt_pw_salt[6], sb->sb_encrypt_pw_salt[7],
+         sb->sb_encrypt_pw_salt[8], sb->sb_encrypt_pw_salt[9],
+         sb->sb_encrypt_pw_salt[10], sb->sb_encrypt_pw_salt[11],
+         sb->sb_encrypt_pw_salt[12], sb->sb_encrypt_pw_salt[13],
+         sb->sb_encrypt_pw_salt[14], sb->sb_encrypt_pw_salt[15],
+         le32toh(sb->sb_lost_and_found_inode),
+         le32toh(sb->sb_project_quota_inode),
+         le32toh(sb->sb_checksum_seed),
+         sb->sb_first_error_code,
+         sb->sb_last_error_code);
+  ext4fs_inspect_flag_names(le16toh(sb->sb_encoding),
+                            ext4fs_encoding_names);
+  printf(",\n"
+         "                   sb_encoding_flags: ");
+  ext4fs_inspect_flag_names(le16toh(sb->sb_encoding_flags),
+                            ext4fs_encoding_flag_names);
+  printf(",\n"
+         "                   }\n");
   return 0;
 }
 

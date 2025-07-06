@@ -61,7 +61,7 @@ int main (int argc, char **argv)
   (void) argv;
   TEST_EQ(offsetof(struct ext4fs_super_block, sb_mount_opts),
           0x200);
-  TEST_EQ(offsetof(struct ext4fs_super_block, sb_orphan_file_inum),
+  TEST_EQ(offsetof(struct ext4fs_super_block, sb_orphan_file_inode),
           0x280);
   TEST_EQ(offsetof(struct ext4fs_super_block, sb_checksum),
           0x3FC);
