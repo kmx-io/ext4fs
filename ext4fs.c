@@ -699,7 +699,10 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   ext4fs_inspect_flag_names(le16toh(sb->sb_encoding_flags),
                             ext4fs_encoding_flag_names);
   printf(",\n"
-         "                   }\n");
+         "                   sb_orphan_file_inode: (U32) %u,\n"
+         "                   sb_checksum: (U32) 0x%08X}\n",
+         le32toh(sb->sb_orphan_file_inode),
+         le32toh(sb->sb_checksum));
   return 0;
 }
 
