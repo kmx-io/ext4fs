@@ -1,4 +1,5 @@
 configure.h
+crc32c_table/crc32c_table
 inspect_ext4fs/inspect_ext4fs
 *.mk
 newfs_ext4fs/newfs_ext4fs

@@ -79,21 +79,21 @@ const s_value_name ext4fs_feature_compat_names[] = {
 };
 
 const s_value_name ext4fs_feature_incompat_names[] = {
-  {EXT4FS_FEATURE_INCOMPAT_COMPRESSION, "compression"},
-  {EXT4FS_FEATURE_INCOMPAT_FILETYPE,    "filetype"},
-  {EXT4FS_FEATURE_INCOMPAT_RECOVER,     "recover"},
-  {EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV, "journal_dev"},
-  {EXT4FS_FEATURE_INCOMPAT_META_BG,     "meta_bg"},
-  {EXT4FS_FEATURE_INCOMPAT_EXTENTS,     "extents"},
-  {EXT4FS_FEATURE_INCOMPAT_64BIT,       "64bit"},
-  {EXT4FS_FEATURE_INCOMPAT_MMP,         "mmp"},
-  {EXT4FS_FEATURE_INCOMPAT_FLEX_BG,     "flex_bg"},
-  {EXT4FS_FEATURE_INCOMPAT_EA_INODE,    "ea_inode"},
-  {EXT4FS_FEATURE_INCOMPAT_DIRDATA,     "dirdata"},
-  {EXT4FS_FEATURE_INCOMPAT_CSUM_SEED,   "csum_seed"},
-  {EXT4FS_FEATURE_INCOMPAT_LARGEDIR,    "largedir"},
-  {EXT4FS_FEATURE_INCOMPAT_INLINE_DATA, "inline_data"},
-  {EXT4FS_FEATURE_INCOMPAT_ENCRYPT,     "encrypt"},
+  {EXT4FS_FEATURE_INCOMPAT_COMPRESSION,   "compression"},
+  {EXT4FS_FEATURE_INCOMPAT_FILETYPE,      "filetype"},
+  {EXT4FS_FEATURE_INCOMPAT_RECOVER,       "recover"},
+  {EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV,   "journal_dev"},
+  {EXT4FS_FEATURE_INCOMPAT_META_BG,       "meta_bg"},
+  {EXT4FS_FEATURE_INCOMPAT_EXTENTS,       "extents"},
+  {EXT4FS_FEATURE_INCOMPAT_64BIT,         "64bit"},
+  {EXT4FS_FEATURE_INCOMPAT_MMP,           "mmp"},
+  {EXT4FS_FEATURE_INCOMPAT_FLEX_BG,       "flex_bg"},
+  {EXT4FS_FEATURE_INCOMPAT_EA_INODE,      "ea_inode"},
+  {EXT4FS_FEATURE_INCOMPAT_DIRDATA,       "dirdata"},
+  {EXT4FS_FEATURE_INCOMPAT_CHECKSUM_SEED, "csum_seed"},
+  {EXT4FS_FEATURE_INCOMPAT_LARGEDIR,      "largedir"},
+  {EXT4FS_FEATURE_INCOMPAT_INLINE_DATA,   "inline_data"},
+  {EXT4FS_FEATURE_INCOMPAT_ENCRYPT,       "encrypt"},
   {0, NULL}
 };
 
@@ -208,6 +208,41 @@ ext4fs_bgd_block_bitmap_checksum
   *dest = le16toh(bgd->bgd_block_bitmap_checksum_lo);
   if (ext4fs_64bit(sb))
     *dest |= (uint32_t) le16toh(bgd->bgd_block_bitmap_checksum_hi) << 16;
+  return 0;
+}
+
+int
+ext4fs_bgd_checksum_compute
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint16_t *dest)
+{
+  uint32_t seed;
+  size_t size;
+  uint8_t tmp[64];
+  if (! sb) {
+    warnx("ext4fs_bgd_checksum_compute: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_checksum_compute: NULL block group descriptor");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_bgd_checksum_compute: NULL dest");
+    return -1;
+  }
+  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_CHECKSUM_SEED)
+    seed = sb->sb_checksum_seed;
+  else
+    seed = crc32c(~0, sb->sb_uuid, 16);
+  if (ext4fs_64bit(sb))
+    size = 64;
+  else
+    size = 32;
+  memcpy(tmp, bgd, size);
+  tmp[0x2E] = tmp[0x2F] = 0;
+  *dest = crc32c(seed, tmp, size) & 0xFFFF;
   return 0;
 }
 
@@ -356,6 +391,30 @@ ext4fs_bgd_inode_table_block
 }
 
 int
+ext4fs_bgd_inode_table_unused
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_bgd_inode_table_unused: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_inode_table_unused: NULL block group descriptor");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_bgd_inode_table_unused: NULL dest");
+    return -1;
+  }
+  *dest = le16toh(bgd->bgd_inode_table_unused_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(bgd->bgd_inode_table_unused_hi) << 16;
+  return 0;
+}
+
+int
 ext4fs_bgd_used_dirs_count
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
@@ -496,12 +555,15 @@ ext4fs_inspect_block_group_descriptor
 {
   uint64_t block_bitmap_block;
   uint32_t block_bitmap_checksum;
+  uint16_t checksum;
+  uint16_t checksum_computed;
   uint64_t exclude_bitmap_block;
   uint32_t free_blocks_count;
   uint32_t free_inodes_count;
   uint64_t inode_bitmap_block;
   uint32_t inode_bitmap_checksum;
   uint64_t inode_table_block;
+  uint32_t inode_table_unused;
   uint32_t used_dirs_count;
   if (ext4fs_bgd_block_bitmap_block(sb, bgd, &block_bitmap_block) ||
       ext4fs_bgd_inode_bitmap_block(sb, bgd, &inode_bitmap_block) ||
@@ -511,8 +573,11 @@ ext4fs_inspect_block_group_descriptor
       ext4fs_bgd_used_dirs_count(sb, bgd, &used_dirs_count) ||
       ext4fs_bgd_exclude_bitmap_block(sb, bgd, &exclude_bitmap_block) ||
       ext4fs_bgd_block_bitmap_checksum(sb, bgd, &block_bitmap_checksum) ||
-      ext4fs_bgd_inode_bitmap_checksum(sb, bgd, &inode_bitmap_checksum))
+      ext4fs_bgd_inode_bitmap_checksum(sb, bgd, &inode_bitmap_checksum) ||
+      ext4fs_bgd_inode_table_unused(sb, bgd, &inode_table_unused) ||
+      ext4fs_bgd_checksum_compute(sb, bgd, &checksum_computed))
     return -1;
+  checksum = le16toh(bgd->bgd_checksum);
   printf("%%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) "
          CONFIGURE_FMT_UINT64 ",\n"
          "                             bgd_inode_bitmap_block: (U64) "
@@ -536,10 +601,15 @@ ext4fs_inspect_block_group_descriptor
          "                             bgd_block_bitmap_checksum: "
          "(U32) 0x%08X,\n"
          "                             bgd_inode_bitmap_checksum: "
-         "(U32) 0x%08X}\n",
+         "(U32) 0x%08X,\n"
+         "                             bgd_inode_table_unused: "
+         "(U32) %u,\n"
+         "                             bgd_checksum: (U16) 0x%04X}\t# 0x%04X\n",
          exclude_bitmap_block,
          block_bitmap_checksum,
-         inode_bitmap_checksum);
+         inode_bitmap_checksum,
+         inode_table_unused,
+         checksum, checksum_computed);
   return 0;
 }
 

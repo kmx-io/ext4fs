@@ -10,15 +10,28 @@
 ## AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
 ## THIS SOFTWARE.
 
-all: build test
+PROG =    crc32c_table
+HEADERS =
+SOURCES = crc32c_table.c
+OBJECTS = crc32c_table.o
+OUT_H =   crc32c_table.h
 
-build:
-	${MAKE} -C crc32c_table build
-	${MAKE} -C inspect_ext4fs build
-	${MAKE} -C newfs_ext4fs build
-	${MAKE} -C test build
+CPPFLAGS = -I../include
+CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
+
+all: build gen
+
+build: ${PROG}
+
+gen: build
+	./${PROG} > ${OUT_H}
+
+${OBJECTS}: ${HEADERS}
+
+${PROG}: ${OBJECTS}
+	${CC} ${CFLAGS} ${LDFLAGS} ${OBJECTS} -o ${PROG}
 
 test: build
-	${MAKE} -C test test
+	./${PROG}
 
 .PHONY: all build test

@@ -1,4 +1,4 @@
-/* kc3
+/* ext4fs
  * Copyright 2025 kmx.io <contact@kmx.io>
  *
  * Permission is hereby granted to use this software granted the above
@@ -62,21 +62,21 @@ extern const char *ext4fs_error_policy_names[];
 
 extern const s_value_name ext4fs_feature_compat_names[];
 
-#define EXT4FS_FEATURE_INCOMPAT_COMPRESSION  0x00001 // Not used in ext4
-#define EXT4FS_FEATURE_INCOMPAT_FILETYPE     0x00002 // Directory entry has type
-#define EXT4FS_FEATURE_INCOMPAT_RECOVER      0x00004 // Needs journal replay
-#define EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV  0x00008 // External journal device
-#define EXT4FS_FEATURE_INCOMPAT_META_BG      0x00010 // Meta block groups
-#define EXT4FS_FEATURE_INCOMPAT_EXTENTS      0x00040 // Extents instead of block map
-#define EXT4FS_FEATURE_INCOMPAT_64BIT        0x00080 // 64-bit block numbers
-#define EXT4FS_FEATURE_INCOMPAT_MMP          0x00100 // Multiple mount protection
-#define EXT4FS_FEATURE_INCOMPAT_FLEX_BG      0x00200 // Flexible block groups
-#define EXT4FS_FEATURE_INCOMPAT_EA_INODE     0x00400 // In-inode xattrs
-#define EXT4FS_FEATURE_INCOMPAT_DIRDATA      0x01000 // Inline dir data
-#define EXT4FS_FEATURE_INCOMPAT_CSUM_SEED    0x02000 // Metadata checksum seed
-#define EXT4FS_FEATURE_INCOMPAT_LARGEDIR     0x04000 // Large dir support
-#define EXT4FS_FEATURE_INCOMPAT_INLINE_DATA  0x08000 // Inline file data
-#define EXT4FS_FEATURE_INCOMPAT_ENCRYPT      0x10000 // File encryption
+#define EXT4FS_FEATURE_INCOMPAT_COMPRESSION    0x00001 // Not used
+#define EXT4FS_FEATURE_INCOMPAT_FILETYPE       0x00002 // ftype in dirent
+#define EXT4FS_FEATURE_INCOMPAT_RECOVER        0x00004 // needs journal recovery
+#define EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV    0x00008 // External journal device
+#define EXT4FS_FEATURE_INCOMPAT_META_BG        0x00010 // Meta block groups
+#define EXT4FS_FEATURE_INCOMPAT_EXTENTS        0x00040 // Extents instead of block map
+#define EXT4FS_FEATURE_INCOMPAT_64BIT          0x00080 // 64-bit block numbers
+#define EXT4FS_FEATURE_INCOMPAT_MMP            0x00100 // Multiple mount protection
+#define EXT4FS_FEATURE_INCOMPAT_FLEX_BG        0x00200 // Flexible block groups
+#define EXT4FS_FEATURE_INCOMPAT_EA_INODE       0x00400 // In-inode xattrs
+#define EXT4FS_FEATURE_INCOMPAT_DIRDATA        0x01000 // Inline dir data
+#define EXT4FS_FEATURE_INCOMPAT_CHECKSUM_SEED  0x02000 // Metadata checksum seed
+#define EXT4FS_FEATURE_INCOMPAT_LARGEDIR       0x04000 // Large dir support
+#define EXT4FS_FEATURE_INCOMPAT_INLINE_DATA    0x08000 // Inline file data
+#define EXT4FS_FEATURE_INCOMPAT_ENCRYPT        0x10000 // File encryption
 
 extern const s_value_name ext4fs_feature_incompat_names[];
 
@@ -282,7 +282,7 @@ struct ext4fs_block_group_descriptor {
   uint32_t bgd_exclude_bitmap_block_lo;
   uint16_t bgd_block_bitmap_checksum_lo;
   uint16_t bgd_inode_bitmap_checksum_lo;
-  uint16_t bgd_itable_unused;
+  uint16_t bgd_inode_table_unused_lo;
   uint16_t bgd_checksum;
   uint32_t bgd_block_bitmap_block_hi;
   uint32_t bgd_inode_bitmap_block_hi;
@@ -308,6 +308,12 @@ ext4fs_bgd_block_bitmap_checksum
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
  uint32_t *dest);
+
+int
+ext4fs_bgd_checksum_compute
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint16_t *dest);
 
 int
 ext4fs_bgd_exclude_bitmap_block
@@ -344,6 +350,12 @@ ext4fs_bgd_inode_table_block
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
  uint64_t *dest);
+
+int
+ext4fs_bgd_inode_table_unused
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest);
 
 int
 ext4fs_bgd_used_dirs_count
