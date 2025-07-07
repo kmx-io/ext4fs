@@ -13,9 +13,13 @@
 include configure.mk
 
 PROG =    newfs_ext4fs
-HEADERS = ../include/ext4fs.h ../include/uuid.h
-SOURCES = newfs_ext4fs.c ext4fs.c uuid.c
-OBJECTS = newfs_ext4fs.o ext4fs.o uuid.o
+SOURCES = newfs_ext4fs.c crc32c.c ext4fs.c uuid.c
+OBJECTS = newfs_ext4fs.o crc32c.o ext4fs.o uuid.o
+
+HEADERS =	../crc32c_table/crc32c_table.h \
+		../include/crc32c.h \
+		../include/ext4fs.h \
+		../include/uuid.h
 
 CPPFLAGS = -I../include -D${UNAME}
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11

@@ -10,7 +10,7 @@
  * AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
  * THIS SOFTWARE.
  */
-#include "../include/crc32c.h"
+#include <crc32c.h>
 
 #include "../crc32c_table/crc32c_table.h"
 

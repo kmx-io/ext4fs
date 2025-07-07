@@ -13,9 +13,13 @@
 include configure.mk
 
 PROG =    inspect_ext4fs
-HEADERS = ../include/ext4fs.h ../include/uuid.h
-SOURCES = inspect_ext4fs.c ext4fs.c uuid.c
-OBJECTS = inspect_ext4fs.o ext4fs.o uuid.o
+SOURCES = crc32c.c inspect_ext4fs.c ext4fs.c uuid.c
+OBJECTS = crc32c.o inspect_ext4fs.o ext4fs.o uuid.o
+
+HEADERS =	../crc32c_table/crc32c_table.h \
+		../include/crc32c.h \
+		../include/ext4fs.h \
+		../include/uuid.h
 
 CPPFLAGS = -I../include -D${UNAME}
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
@@ -24,11 +28,13 @@ all: build
 
 build: ${PROG}
 
+crc32c.o: ../crc32c.c
+
 ext4fs.o: ../ext4fs.c
 
 uuid.o: ../uuid.c
 
-${OBJECTS}: ${HEADERS}
+${OBJECTS}: ${HEADERS} Makefile
 
 ${PROG}: ${OBJECTS}
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJECTS} -o ${PROG}

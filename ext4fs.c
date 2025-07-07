@@ -33,6 +33,7 @@
 #include <unistd.h>
 
 #include <ext4fs.h>
+#include <crc32c.h>
 #include <uuid.h>
 
 const s_value_name ext4fs_bgd_flag_names[] = {

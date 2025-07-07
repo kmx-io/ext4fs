@@ -10,12 +10,4 @@
  * AUTHOR BE CONSIDERED LIABLE FOR THE USE AND PERFORMANCE OF
  * THIS SOFTWARE.
  */
-#ifndef CRC32C_H
-#define CRC32C_H
-
-#include <stddef.h>
-#include <stdint.h>
-
-uint32_t crc32c (uint32_t crc, const void *data, size_t len);
-
-#endif /* CRC32C_H */
+#include "../crc32c.c"

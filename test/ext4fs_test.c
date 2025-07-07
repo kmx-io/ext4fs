@@ -13,6 +13,8 @@
 #include <stdio.h>
 
 #include <ext4fs.h>
+#include <crc32c.h>
+#include <uuid.h>
 
 long g_test_ko = 0;
 long g_test_ok = 0;
@@ -71,6 +73,7 @@ int main (int argc, char **argv)
           1024);
   TEST_EQ(sizeof(struct ext4fs_block_group_descriptor),
           64);
+  TEST_EQ(crc32c(0, "123456789", 9), 0xe3069283);
   test_summary();
   return 0;
 }
