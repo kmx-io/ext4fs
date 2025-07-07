@@ -35,6 +35,16 @@
 #include <ext4fs.h>
 #include <uuid.h>
 
+const s_value_name ext4fs_bgd_flag_names[] = {
+  {EXT4FS_BGD_FLAG_INODE_UNINIT, "inode-uninit"},
+  {EXT4FS_BGD_FLAG_BLOCK_UNINIT, "block-uninit"},
+  {EXT4FS_BGD_FLAG_INODE_ZEROED, "inode-zeroed"},
+  {EXT4FS_BGD_FLAG_DIRTY,        "dirty"},
+  {EXT4FS_BGD_FLAG_BLOCK_ZEROED, "block-zeroed"},
+  {EXT4FS_BGD_FLAG_READ_ONLY,    "read-only"},
+  {0, NULL}
+};
+
 const s_value_name ext4fs_checksum_type_names[] = {
   {EXT4FS_CHECKSUM_TYPE_CRC32C, "crc32c"},
   {0, NULL}
@@ -178,6 +188,54 @@ ext4fs_bgd_block_bitmap_block
 }
 
 int
+ext4fs_bgd_block_bitmap_checksum
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_bgd_block_bitmap_checksum: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_block_bitmap_checksum: NULL block group descriptor");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_bgd_block_bitmap_checksum: NULL dest");
+    return -1;
+  }
+  *dest = le16toh(bgd->bgd_block_bitmap_checksum_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(bgd->bgd_block_bitmap_checksum_hi) << 16;
+  return 0;
+}
+
+int
+ext4fs_bgd_exclude_bitmap_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_bgd_exclude_bitmap_block: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_exclude_bitmap_block: NULL block group descriptor");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_bgd_exclude_bitmap_block: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(bgd->bgd_exclude_bitmap_block_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) le32toh(bgd->bgd_exclude_bitmap_block_hi) << 32;
+  return 0;
+}
+
+int
 ext4fs_bgd_free_blocks_count
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
@@ -250,6 +308,30 @@ ext4fs_bgd_inode_bitmap_block
 }
 
 int
+ext4fs_bgd_inode_bitmap_checksum
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_bgd_inode_bitmap_checksum: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_inode_bitmap_checksum: NULL block group descriptor");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_bgd_inode_bitmap_checksum: NULL dest");
+    return -1;
+  }
+  *dest = le16toh(bgd->bgd_inode_bitmap_checksum_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(bgd->bgd_inode_bitmap_checksum_hi) << 16;
+  return 0;
+}
+
+int
 ext4fs_bgd_inode_table_block
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
@@ -270,6 +352,30 @@ ext4fs_bgd_inode_table_block
   *dest = le32toh(bgd->bgd_inode_table_block_lo);
   if (ext4fs_64bit(sb))
     *dest |= (uint64_t) le32toh(bgd->bgd_inode_table_block_hi) << 32;
+  return 0;
+}
+
+int
+ext4fs_bgd_used_dirs_count
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_bgd_used_dirs_count: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_used_dirs_count: NULL block group descriptor");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_bgd_used_dirs_count: NULL dest");
+    return -1;
+  }
+  *dest = le16toh(bgd->bgd_used_dirs_count_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(bgd->bgd_used_dirs_count_hi) << 16;
   return 0;
 }
 
@@ -389,30 +495,51 @@ ext4fs_inspect_block_group_descriptor
  const struct ext4fs_block_group_descriptor *bgd)
 {
   uint64_t block_bitmap_block;
-  uint64_t inode_bitmap_block;
-  uint64_t inode_table_block;
+  uint32_t block_bitmap_checksum;
+  uint64_t exclude_bitmap_block;
   uint32_t free_blocks_count;
   uint32_t free_inodes_count;
+  uint64_t inode_bitmap_block;
+  uint32_t inode_bitmap_checksum;
+  uint64_t inode_table_block;
+  uint32_t used_dirs_count;
   if (ext4fs_bgd_block_bitmap_block(sb, bgd, &block_bitmap_block) ||
       ext4fs_bgd_inode_bitmap_block(sb, bgd, &inode_bitmap_block) ||
       ext4fs_bgd_inode_table_block(sb, bgd, &inode_table_block) ||
       ext4fs_bgd_free_blocks_count(sb, bgd, &free_blocks_count) ||
-      ext4fs_bgd_free_inodes_count(sb, bgd, &free_inodes_count))
+      ext4fs_bgd_free_inodes_count(sb, bgd, &free_inodes_count) ||
+      ext4fs_bgd_used_dirs_count(sb, bgd, &used_dirs_count) ||
+      ext4fs_bgd_exclude_bitmap_block(sb, bgd, &exclude_bitmap_block) ||
+      ext4fs_bgd_block_bitmap_checksum(sb, bgd, &block_bitmap_checksum) ||
+      ext4fs_bgd_inode_bitmap_checksum(sb, bgd, &inode_bitmap_checksum))
     return -1;
-  printf("%%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: "
+  printf("%%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) "
          CONFIGURE_FMT_UINT64 ",\n"
-         "                             bgd_inode_bitmap_block: "
+         "                             bgd_inode_bitmap_block: (U64) "
          CONFIGURE_FMT_UINT64 ",\n"
-         "                             bgd_inode_table_block: "
-         CONFIGURE_FMT_UINT64 "}\n"
-         "                             bgd_free_blocks_count: %u,\n"
-         "                             bgd_free_inodes_count: %u,\n"
-         "                             }",
+         "                             bgd_inode_table_block: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                             bgd_free_blocks_count: (U32) %u,\n"
+         "                             bgd_free_inodes_count: (U32) %u,\n"
+         "                             bgd_used_dirs_count: (U32) %u,\n"
+         "                             bgd_flags: ",
          block_bitmap_block,
          inode_bitmap_block,
          inode_table_block,
          free_blocks_count,
-         free_inodes_count);
+         free_inodes_count,
+         used_dirs_count);
+  ext4fs_inspect_flag_names(bgd->bgd_flags, ext4fs_bgd_flag_names);
+  printf(",\n"
+         "                             bgd_exclude_bitmap_block: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                             bgd_block_bitmap_checksum: "
+         "(U32) 0x%08X,\n"
+         "                             bgd_inode_bitmap_checksum: "
+         "(U32) 0x%08X}\n",
+         exclude_bitmap_block,
+         block_bitmap_checksum,
+         inode_bitmap_checksum);
   return 0;
 }
 

@@ -135,6 +135,15 @@ extern const char *ext4fs_os_str[];
 
 extern const s_value_name ext4fs_state_names[];
 
+#define EXT4FS_BGD_FLAG_INODE_UNINIT     0x0001
+#define EXT4FS_BGD_FLAG_BLOCK_UNINIT     0x0002
+#define EXT4FS_BGD_FLAG_INODE_ZEROED     0x0004
+#define EXT4FS_BGD_FLAG_DIRTY            0x0008
+#define EXT4FS_BGD_FLAG_BLOCK_ZEROED     0x0010
+#define EXT4FS_BGD_FLAG_READ_ONLY        0x0020
+
+extern const s_value_name ext4fs_bgd_flag_names[];
+
 struct ext4fs_super_block {
   uint32_t sb_inodes_count;
   uint32_t sb_blocks_count_lo;
@@ -295,6 +304,18 @@ ext4fs_bgd_block_bitmap_block
  uint64_t *dest);
 
 int
+ext4fs_bgd_block_bitmap_checksum
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest);
+
+int
+ext4fs_bgd_exclude_bitmap_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest);
+
+int
 ext4fs_bgd_free_blocks_count
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
@@ -306,6 +327,29 @@ ext4fs_bgd_free_inodes_count
  const struct ext4fs_block_group_descriptor *bgd,
  uint32_t *dest);
 
+int
+ext4fs_bgd_inode_bitmap_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest);
+
+int
+ext4fs_bgd_inode_bitmap_checksum
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest);
+
+int
+ext4fs_bgd_inode_table_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest);
+
+int
+ext4fs_bgd_used_dirs_count
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest);
 
 #ifdef OpenBSD
 
@@ -319,17 +363,6 @@ struct ext4fs_block_group_descriptor *
 ext4fs_block_group_descriptor_read
 (struct ext4fs_block_group_descriptor *bgd, int fd,
  const struct ext4fs_super_block *sb);
-
-int
-ext4fs_bgd_inode_bitmap
-(const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *bgd,
- uint64_t *dest);
-
-int ext4fs_bgd_inode_table
-(const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *bgd,
- uint64_t *dest);
 
 int ext4fs_inspect (const char *dev, int fd);
 
