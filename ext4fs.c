@@ -154,21 +154,21 @@ int ext4fs_64bit (const struct ext4fs_super_block *sb)
 }
 
 int
-ext4fs_block_bitmap_block
+ext4fs_bgd_block_bitmap_block
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
  uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_block_bitmap_block: NULL super block");
+    warnx("ext4fs_bgd_block_bitmap_block: NULL super block");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_block_bitmap_block: NULL block group descriptor");
+    warnx("ext4fs_bgd_block_bitmap_block: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_block_bitmap_block: NULL dest");
+    warnx("ext4fs_bgd_block_bitmap_block: NULL dest");
     return -1;
   }
   *dest = le32toh(bgd->bgd_block_bitmap_block_lo);
@@ -177,100 +177,99 @@ ext4fs_block_bitmap_block
   return 0;
 }
 
-int ext4fs_block_size (const struct ext4fs_super_block *sb,
-                       uint32_t *dest)
+int
+ext4fs_bgd_free_blocks_count
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_block_size: NULL super block");
+    warnx("ext4fs_bgd_free_blocks_count: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_free_blocks_count: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_block_size: NULL dest");
+    warnx("ext4fs_bgd_free_blocks_count: NULL dest");
     return -1;
   }
-  *dest = 1 << (sb->sb_log_block_size + 10);
+  *dest = le16toh(bgd->bgd_free_blocks_count_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(bgd->bgd_free_blocks_count_hi) << 16;
   return 0;
 }
 
-int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
-                         uint64_t *dest)
+int
+ext4fs_bgd_free_inodes_count
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_blocks_count: NULL super block");
+    warnx("ext4fs_bgd_free_inodes_count: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_free_inodes_count: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_blocks_count: NULL dest");
+    warnx("ext4fs_bgd_free_inodes_count: NULL dest");
     return -1;
   }
-  *dest = le32toh(sb->sb_blocks_count_lo);
+  *dest = le16toh(bgd->bgd_free_inodes_count_lo);
   if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(sb->sb_blocks_count_hi) << 32;
+    *dest |= (uint32_t) le16toh(bgd->bgd_free_inodes_count_hi) << 16;
   return 0;
 }
 
-int ext4fs_check_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest)
+int
+ext4fs_bgd_inode_bitmap_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_check_time: NULL super block");
+    warnx("ext4fs_bgd_inode_bitmap_block: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_inode_bitmap_block: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_check_time: NULL dest");
+    warnx("ext4fs_bgd_inode_bitmap_block: NULL dest");
     return -1;
   }
-  *dest = le32toh(sb->sb_check_time_lo);
+  *dest = le32toh(bgd->bgd_inode_bitmap_block_lo);
   if (ext4fs_64bit(sb))
-    *dest |= ((uint64_t) sb->sb_check_time_hi) << 32;
+    *dest |= (uint64_t) le32toh(bgd->bgd_inode_bitmap_block_hi) << 32;
   return 0;
 }
 
-#ifdef OpenBSD
-
-struct disklabel *
-ext4fs_disklabel_get (struct disklabel *dl, int fd)
-{
-  if (ioctl(fd, DIOCGDINFO, (char *) dl) == -1) {
-    warn("disklabel_get: ioctl DIOCGDINFO");
-    return NULL;
-  }
-  return dl;
-}
-
-#endif /* OpenBSD */
-
-int ext4fs_first_error_time (const struct ext4fs_super_block *sb,
-                             uint64_t *dest)
+int
+ext4fs_bgd_inode_table_block
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_first_error_time: NULL super block");
+    warnx("ext4fs_bgd_inode_table_block: NULL super block");
+    return -1;
+  }
+  if (! bgd) {
+    warnx("ext4fs_bgd_inode_table_block: NULL block group descriptor");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_first_error_time: NULL dest");
+    warnx("ext4fs_bgd_inode_table_block: NULL dest");
     return -1;
   }
-  *dest = le32toh(sb->sb_first_error_time_lo);
+  *dest = le32toh(bgd->bgd_inode_table_block_lo);
   if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) sb->sb_first_error_time_hi << 32;
-  return 0;
-}
-
-int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
-                              uint64_t *dest)
-{
-  if (! sb) {
-    warnx("ext4fs_free_blocks_count: NULL super block");
-    return -1;
-  }
-  if (! dest) {
-    warnx("ext4fs_free_blocks_count: NULL dest");
-    return -1;
-  }
-  *dest = le32toh(sb->sb_free_blocks_count_lo);
-  if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(sb->sb_free_blocks_count_hi) << 32;
+    *dest |= (uint64_t) le32toh(bgd->bgd_inode_table_block_hi) << 32;
   return 0;
 }
 
@@ -285,7 +284,7 @@ ext4fs_block_group_descriptor_read
   uint32_t offset;
   ssize_t r;
   ssize_t remaining;
-  if (ext4fs_block_size(sb, &block_size))
+  if (ext4fs_sb_block_size(sb, &block_size))
     return NULL;
   offset = (EXT4FS_SUPER_BLOCK_OFFSET + EXT4FS_SUPER_BLOCK_SIZE +
             (block_size - 1)) / block_size * block_size;
@@ -307,53 +306,19 @@ ext4fs_block_group_descriptor_read
   return bgd;
 }
 
-int
-ext4fs_inode_bitmap_block
-(const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *bgd,
- uint64_t *dest)
+#ifdef OpenBSD
+
+struct disklabel *
+ext4fs_disklabel_get (struct disklabel *dl, int fd)
 {
-  if (! sb) {
-    warnx("ext4fs_inode_bitmap_block: NULL super block");
-    return -1;
+  if (ioctl(fd, DIOCGDINFO, (char *) dl) == -1) {
+    warn("disklabel_get: ioctl DIOCGDINFO");
+    return NULL;
   }
-  if (! bgd) {
-    warnx("ext4fs_inode_bitmap_block: NULL block group descriptor");
-    return -1;
-  }
-  if (! dest) {
-    warnx("ext4fs_inode_bitmap_block: NULL dest");
-    return -1;
-  }
-  *dest = le32toh(bgd->bgd_inode_bitmap_block_lo);
-  if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(bgd->bgd_inode_bitmap_block_hi) << 32;
-  return 0;
+  return dl;
 }
 
-int
-ext4fs_inode_table_block
-(const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *bgd,
- uint64_t *dest)
-{
-  if (! sb) {
-    warnx("ext4fs_inode_table_block: NULL super block");
-    return -1;
-  }
-  if (! bgd) {
-    warnx("ext4fs_inode_table_block: NULL block group descriptor");
-    return -1;
-  }
-  if (! dest) {
-    warnx("ext4fs_inode_table_block: NULL dest");
-    return -1;
-  }
-  *dest = le32toh(bgd->bgd_inode_table_block_lo);
-  if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(bgd->bgd_inode_table_block_hi) << 32;
-  return 0;
-}
+#endif /* OpenBSD */
 
 int ext4fs_inspect (const char *dev, int fd)
 {
@@ -421,21 +386,33 @@ void ext4fs_inspect_errors (uint16_t errors)
 int
 ext4fs_inspect_block_group_descriptor
 (const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *gd)
+ const struct ext4fs_block_group_descriptor *bgd)
 {
   uint64_t block_bitmap_block;
   uint64_t inode_bitmap_block;
   uint64_t inode_table_block;
-  if (ext4fs_block_bitmap_block(sb, gd, &block_bitmap_block) ||
-      ext4fs_inode_bitmap_block(sb, gd, &inode_bitmap_block) ||
-      ext4fs_inode_table_block(sb, gd, &inode_table_block))
+  uint32_t free_blocks_count;
+  uint32_t free_inodes_count;
+  if (ext4fs_bgd_block_bitmap_block(sb, bgd, &block_bitmap_block) ||
+      ext4fs_bgd_inode_bitmap_block(sb, bgd, &inode_bitmap_block) ||
+      ext4fs_bgd_inode_table_block(sb, bgd, &inode_table_block) ||
+      ext4fs_bgd_free_blocks_count(sb, bgd, &free_blocks_count) ||
+      ext4fs_bgd_free_inodes_count(sb, bgd, &free_inodes_count))
     return -1;
-  printf("%%Ext4fs.GroupDesc{gd_block_bitmap_block: " CONFIGURE_FMT_UINT64 ",\n"
-         "                  gd_inode_bitmap_block: " CONFIGURE_FMT_UINT64 ",\n"
-         "                  gd_inode_table_block: " CONFIGURE_FMT_UINT64 "}\n",
+  printf("%%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                             bgd_inode_bitmap_block: "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                             bgd_inode_table_block: "
+         CONFIGURE_FMT_UINT64 "}\n"
+         "                             bgd_free_blocks_count: %u,\n"
+         "                             bgd_free_inodes_count: %u,\n"
+         "                             }",
          block_bitmap_block,
          inode_bitmap_block,
-         inode_table_block);
+         inode_table_block,
+         free_blocks_count,
+         free_inodes_count);
   return 0;
 }
 
@@ -461,15 +438,15 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   char str_last_error_time[32];
   char volume_name[EXT4FS_VOLUME_NAME_MAX + 1] = {0};
   uint64_t write_time;
-  if (ext4fs_blocks_count(sb, &blocks_count) ||
-      ext4fs_reserved_blocks_count(sb, &reserved_blocks_count) ||
-      ext4fs_free_blocks_count(sb, &free_blocks_count) ||
-      ext4fs_mount_time(sb, &mount_time) ||
-      ext4fs_write_time(sb, &write_time) ||
-      ext4fs_check_time(sb, &check_time) ||
-      ext4fs_newfs_time(sb, &newfs_time) ||
-      ext4fs_first_error_time(sb, &first_error_time) ||
-      ext4fs_last_error_time(sb, &last_error_time) ||
+  if (ext4fs_sb_blocks_count(sb, &blocks_count) ||
+      ext4fs_sb_reserved_blocks_count(sb, &reserved_blocks_count) ||
+      ext4fs_sb_free_blocks_count(sb, &free_blocks_count) ||
+      ext4fs_sb_mount_time(sb, &mount_time) ||
+      ext4fs_sb_write_time(sb, &write_time) ||
+      ext4fs_sb_check_time(sb, &check_time) ||
+      ext4fs_sb_newfs_time(sb, &newfs_time) ||
+      ext4fs_sb_first_error_time(sb, &first_error_time) ||
+      ext4fs_sb_last_error_time(sb, &last_error_time) ||
       ext4fs_time_to_str(mount_time, str_mount_time,
                          sizeof(str_mount_time)) ||
       ext4fs_time_to_str(write_time, str_write_time,
@@ -727,15 +704,98 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   return 0;
 }
 
-int ext4fs_last_error_time (const struct ext4fs_super_block *sb,
-                             uint64_t *dest)
+int ext4fs_sb_block_size (const struct ext4fs_super_block *sb,
+                          uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_last_error_time: NULL super block");
+    warnx("ext4fs_sb_block_size: NULL super block");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_last_error_time: NULL dest");
+    warnx("ext4fs_sb_block_size: NULL dest");
+    return -1;
+  }
+  *dest = 1 << (sb->sb_log_block_size + 10);
+  return 0;
+}
+
+int ext4fs_sb_blocks_count (const struct ext4fs_super_block *sb,
+                            uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_sb_blocks_count: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_sb_blocks_count: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_blocks_count_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) le32toh(sb->sb_blocks_count_hi) << 32;
+  return 0;
+}
+
+int ext4fs_sb_check_time (const struct ext4fs_super_block *sb,
+                          uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_sb_check_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_sb_check_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_check_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= ((uint64_t) sb->sb_check_time_hi) << 32;
+  return 0;
+}
+
+int ext4fs_sb_first_error_time (const struct ext4fs_super_block *sb,
+                             uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_sb_first_error_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_sb_first_error_time: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_first_error_time_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) sb->sb_first_error_time_hi << 32;
+  return 0;
+}
+
+int ext4fs_sb_free_blocks_count (const struct ext4fs_super_block *sb,
+                              uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_sb_free_blocks_count: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_sb_free_blocks_count: NULL dest");
+    return -1;
+  }
+  *dest = le32toh(sb->sb_free_blocks_count_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) le32toh(sb->sb_free_blocks_count_hi) << 32;
+  return 0;
+}
+
+int ext4fs_sb_last_error_time (const struct ext4fs_super_block *sb,
+                               uint64_t *dest)
+{
+  if (! sb) {
+    warnx("ext4fs_sb_last_error_time: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_sb_last_error_time: NULL dest");
     return -1;
   }
   *dest = le32toh(sb->sb_last_error_time_lo);
@@ -744,15 +804,15 @@ int ext4fs_last_error_time (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-int ext4fs_mount_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest)
+int ext4fs_sb_mount_time (const struct ext4fs_super_block *sb,
+                          uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_mount_time: NULL super block");
+    warnx("ext4fs_sb_mount_time: NULL super block");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_mount_time: NULL dest");
+    warnx("ext4fs_sb_mount_time: NULL dest");
     return -1;
   }
   *dest = le32toh(sb->sb_mount_time_lo);
@@ -761,15 +821,15 @@ int ext4fs_mount_time (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-int ext4fs_newfs_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest)
+int ext4fs_sb_newfs_time (const struct ext4fs_super_block *sb,
+                          uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_newfs_time: NULL super block");
+    warnx("ext4fs_sb_newfs_time: NULL super block");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_newfs_time: NULL dest");
+    warnx("ext4fs_sb_newfs_time: NULL dest");
     return -1;
   }
   *dest = le32toh(sb->sb_newfs_time_lo);
@@ -778,15 +838,15 @@ int ext4fs_newfs_time (const struct ext4fs_super_block *sb,
   return 0;
 }
 
-int ext4fs_reserved_blocks_count (const struct ext4fs_super_block *sb,
-                                  uint64_t *dest)
+int ext4fs_sb_reserved_blocks_count (const struct ext4fs_super_block *sb,
+                                     uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_reserved_blocks_count: NULL super block");
+    warnx("ext4fs_sb_reserved_blocks_count: NULL super block");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_reserved_blocks_count: NULL dest");
+    warnx("ext4fs_sb_reserved_blocks_count: NULL dest");
     return -1;
   }
   *dest = le32toh(sb->sb_reserved_blocks_count_lo);
@@ -874,15 +934,15 @@ int ext4fs_time_to_str (time_t time, char *str, size_t size)
   return 0;
 }
 
-int ext4fs_write_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest)
+int ext4fs_sb_write_time (const struct ext4fs_super_block *sb,
+                          uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_write_time: NULL super block");
+    warnx("ext4fs_sb_write_time: NULL super block");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_write_time: NULL dest");
+    warnx("ext4fs_sb_write_time: NULL dest");
     return -1;
   }
   *dest = le32toh(sb->sb_write_time_lo);

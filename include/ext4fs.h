@@ -289,19 +289,23 @@ struct ext4fs_block_group_descriptor {
 } __attribute__((packed));
 
 int
-ext4fs_block_bitmap_block
+ext4fs_bgd_block_bitmap_block
 (const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *gd,
+ const struct ext4fs_block_group_descriptor *bgd,
  uint64_t *dest);
 
-int ext4fs_block_size (const struct ext4fs_super_block *sb,
-                       uint32_t *dest);
+int
+ext4fs_bgd_free_blocks_count
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest);
 
-int ext4fs_blocks_count (const struct ext4fs_super_block *sb,
-                         uint64_t *dest);
+int
+ext4fs_bgd_free_inodes_count
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t *dest);
 
-int ext4fs_check_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest);
 
 #ifdef OpenBSD
 
@@ -311,26 +315,20 @@ ext4fs_disklabel_get
 
 #endif // OpenBSD
 
-int ext4fs_first_error_time (const struct ext4fs_super_block *sb,
-                             uint64_t *dest);
-
-int ext4fs_free_blocks_count (const struct ext4fs_super_block *sb,
-                              uint64_t *dest);
-
 struct ext4fs_block_group_descriptor *
 ext4fs_block_group_descriptor_read
-(struct ext4fs_block_group_descriptor *gd, int fd,
+(struct ext4fs_block_group_descriptor *bgd, int fd,
  const struct ext4fs_super_block *sb);
 
 int
-ext4fs_inode_bitmap
+ext4fs_bgd_inode_bitmap
 (const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *gd,
+ const struct ext4fs_block_group_descriptor *bgd,
  uint64_t *dest);
 
-int ext4fs_inode_table
+int ext4fs_bgd_inode_table
 (const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *gd,
+ const struct ext4fs_block_group_descriptor *bgd,
  uint64_t *dest);
 
 int ext4fs_inspect (const char *dev, int fd);
@@ -345,21 +343,39 @@ int ext4fs_inspect_flags_names (uint32_t flags,
 int
 ext4fs_inspect_block_group_descriptor
 (const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *gd);
+ const struct ext4fs_block_group_descriptor *bgd);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 
-int ext4fs_last_error_time (const struct ext4fs_super_block *sb,
+int ext4fs_sb_last_error_time (const struct ext4fs_super_block *sb,
                             uint64_t *dest);
 
-int ext4fs_mount_time (const struct ext4fs_super_block *sb,
+int ext4fs_sb_block_size (const struct ext4fs_super_block *sb,
+                          uint32_t *dest);
+
+int ext4fs_sb_blocks_count (const struct ext4fs_super_block *sb,
+                            uint64_t *dest);
+
+int ext4fs_sb_check_time (const struct ext4fs_super_block *sb,
+                          uint64_t *dest);
+
+int ext4fs_sb_first_error_time (const struct ext4fs_super_block *sb,
+                                uint64_t *dest);
+
+int ext4fs_sb_free_blocks_count (const struct ext4fs_super_block *sb,
+                                 uint64_t *dest);
+
+int ext4fs_sb_mount_time (const struct ext4fs_super_block *sb,
                        uint64_t *dest);
 
-int ext4fs_newfs_time (const struct ext4fs_super_block *sb,
+int ext4fs_sb_newfs_time (const struct ext4fs_super_block *sb,
                        uint64_t *dest);
 
-int ext4fs_reserved_blocks_count (const struct ext4fs_super_block *sb,
+int ext4fs_sb_reserved_blocks_count (const struct ext4fs_super_block *sb,
                                   uint64_t *dest);
+
+int ext4fs_sb_write_time (const struct ext4fs_super_block *sb,
+                          uint64_t *dest);
 
 int ext4fs_size (const char *dev, int fd, uint64_t *dest);
 
@@ -368,8 +384,5 @@ ext4fs_super_block_read (struct ext4fs_super_block *sb,
                          int fd);
 
 int ext4fs_time_to_str (time_t time, char *str, size_t size);
-
-int ext4fs_write_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest);
 
 #endif /* EXT4FS_H */
