@@ -11,6 +11,7 @@
  * THIS SOFTWARE.
  */
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 
 #include <ext4fs.h>
@@ -80,6 +81,8 @@ int main (int argc, char **argv)
   TEST_EQ(crc32c(0, &u32, 4), 0x48674BC7);
   bzero(b, sizeof(b));
   TEST_EQ(crc32c(0, b, sizeof(b)), 0x8A9136AAU);
+  memset(b, -1, sizeof(b));
+  TEST_EQ(crc32c(0, b, sizeof(b)), 0x62A8AB43U);
   TEST_EQ(crc32c(0, "123456789", 9), 0xE3069283U);
   test_summary();
   return 0;
