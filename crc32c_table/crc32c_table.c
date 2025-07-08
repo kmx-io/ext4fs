@@ -13,9 +13,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define CRC32C_POLY 0x82F63B78U
+#define CRC32C_POLYNOMIAL          0x1EDC6F41U
+#define CRC32C_POLYNOMIAL_REVERSED 0x82F63B78U
 
-int main(void) {
+int main (void) {
   uint32_t crc;
   uint32_t i;
   uint8_t j;
@@ -26,7 +27,8 @@ int main(void) {
     crc = i;
     j = 0;
     while (j < 8) {
-      crc = (crc >> 1) ^ (CRC32C_POLY & -(int)(crc & 1));
+      crc = (crc >> 1) ^ (CRC32C_POLYNOMIAL_REVERSED &
+                          -(int)(crc & 1));
       j++;
     }
     printf("0x%08X,%s", crc, (i % 4 == 3) ? "\n" : " ");

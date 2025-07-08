@@ -80,21 +80,21 @@ const s_value_name ext4fs_feature_compat_names[] = {
 };
 
 const s_value_name ext4fs_feature_incompat_names[] = {
-  {EXT4FS_FEATURE_INCOMPAT_COMPRESSION,   "compression"},
-  {EXT4FS_FEATURE_INCOMPAT_FILETYPE,      "filetype"},
-  {EXT4FS_FEATURE_INCOMPAT_RECOVER,       "recover"},
-  {EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV,   "journal_dev"},
-  {EXT4FS_FEATURE_INCOMPAT_META_BG,       "meta_bg"},
-  {EXT4FS_FEATURE_INCOMPAT_EXTENTS,       "extents"},
-  {EXT4FS_FEATURE_INCOMPAT_64BIT,         "64bit"},
-  {EXT4FS_FEATURE_INCOMPAT_MMP,           "mmp"},
-  {EXT4FS_FEATURE_INCOMPAT_FLEX_BG,       "flex_bg"},
-  {EXT4FS_FEATURE_INCOMPAT_EA_INODE,      "ea_inode"},
-  {EXT4FS_FEATURE_INCOMPAT_DIRDATA,       "dirdata"},
-  {EXT4FS_FEATURE_INCOMPAT_CHECKSUM_SEED, "csum_seed"},
-  {EXT4FS_FEATURE_INCOMPAT_LARGEDIR,      "largedir"},
-  {EXT4FS_FEATURE_INCOMPAT_INLINE_DATA,   "inline_data"},
-  {EXT4FS_FEATURE_INCOMPAT_ENCRYPT,       "encrypt"},
+  {EXT4FS_FEATURE_INCOMPAT_COMPRESSION, "compression"},
+  {EXT4FS_FEATURE_INCOMPAT_FILETYPE,    "filetype"},
+  {EXT4FS_FEATURE_INCOMPAT_RECOVER,     "recover"},
+  {EXT4FS_FEATURE_INCOMPAT_JOURNAL_DEV, "journal_dev"},
+  {EXT4FS_FEATURE_INCOMPAT_META_BG,     "meta_bg"},
+  {EXT4FS_FEATURE_INCOMPAT_EXTENTS,     "extents"},
+  {EXT4FS_FEATURE_INCOMPAT_64BIT,       "64bit"},
+  {EXT4FS_FEATURE_INCOMPAT_MMP,         "mmp"},
+  {EXT4FS_FEATURE_INCOMPAT_FLEX_BG,     "flex_bg"},
+  {EXT4FS_FEATURE_INCOMPAT_EA_INODE,    "ea_inode"},
+  {EXT4FS_FEATURE_INCOMPAT_DIRDATA,     "dirdata"},
+  {EXT4FS_FEATURE_INCOMPAT_CSUM_SEED,   "csum_seed"},
+  {EXT4FS_FEATURE_INCOMPAT_LARGEDIR,    "largedir"},
+  {EXT4FS_FEATURE_INCOMPAT_INLINE_DATA, "inline_data"},
+  {EXT4FS_FEATURE_INCOMPAT_ENCRYPT,     "encrypt"},
   {0, NULL}
 };
 
@@ -216,11 +216,12 @@ int
 ext4fs_bgd_checksum_compute
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
- uint16_t *dest)
+ uint32_t block_group_id, uint16_t *dest)
 {
+  uint32_t block_group_id_le;
   uint32_t seed;
   size_t size;
-  uint8_t tmp[64];
+  struct ext4fs_block_group_descriptor tmp = {0};
   if (! sb) {
     warnx("ext4fs_bgd_checksum_compute: NULL super block");
     return -1;
@@ -233,17 +234,20 @@ ext4fs_bgd_checksum_compute
     warnx("ext4fs_bgd_checksum_compute: NULL dest");
     return -1;
   }
-  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_CHECKSUM_SEED)
-    seed = sb->sb_checksum_seed;
-  else
+  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_CSUM_SEED)
+    seed = le32toh(sb->sb_checksum_seed);
+  else {
+    block_group_id_le = htole32(block_group_id);
     seed = crc32c(~0, sb->sb_uuid, 16);
+    seed = crc32c(seed, &block_group_id_le, sizeof(block_group_id_le));
+  }
   if (ext4fs_64bit(sb))
     size = 64;
   else
     size = 32;
-  memcpy(tmp, bgd, size);
-  tmp[0x2E] = tmp[0x2F] = 0;
-  *dest = crc32c(seed, tmp, size) & 0xFFFF;
+  memcpy(&tmp, bgd, size);
+  tmp.bgd_checksum = 0;
+  *dest = crc32c(seed, &tmp, size) & 0xFFFF;
   return 0;
 }
 
@@ -501,7 +505,7 @@ int ext4fs_inspect (const char *dev, int fd)
     return -1;
   if (! ext4fs_block_group_descriptor_read(&bgd, fd, &sb))
     return -1;
-  if (ext4fs_inspect_block_group_descriptor(&sb, &bgd))
+  if (ext4fs_inspect_block_group_descriptor(&sb, &bgd, 0))
     return -1;
   printf("EOF\n");
   return 0;
@@ -552,7 +556,8 @@ void ext4fs_inspect_errors (uint16_t errors)
 int
 ext4fs_inspect_block_group_descriptor
 (const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *bgd)
+ const struct ext4fs_block_group_descriptor *bgd,
+ uint32_t block_group_id)
 {
   uint64_t block_bitmap_block;
   uint32_t block_bitmap_checksum;
@@ -573,10 +578,13 @@ ext4fs_inspect_block_group_descriptor
       ext4fs_bgd_free_inodes_count(sb, bgd, &free_inodes_count) ||
       ext4fs_bgd_used_dirs_count(sb, bgd, &used_dirs_count) ||
       ext4fs_bgd_exclude_bitmap_block(sb, bgd, &exclude_bitmap_block) ||
-      ext4fs_bgd_block_bitmap_checksum(sb, bgd, &block_bitmap_checksum) ||
-      ext4fs_bgd_inode_bitmap_checksum(sb, bgd, &inode_bitmap_checksum) ||
+      ext4fs_bgd_block_bitmap_checksum(sb, bgd,
+                                       &block_bitmap_checksum) ||
+      ext4fs_bgd_inode_bitmap_checksum(sb, bgd,
+                                       &inode_bitmap_checksum) ||
       ext4fs_bgd_inode_table_unused(sb, bgd, &inode_table_unused) ||
-      ext4fs_bgd_checksum_compute(sb, bgd, &checksum_computed))
+      ext4fs_bgd_checksum_compute(sb, bgd, block_group_id,
+                                  &checksum_computed))
     return -1;
   checksum = le16toh(bgd->bgd_checksum);
   printf("%%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) "

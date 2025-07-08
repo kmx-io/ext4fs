@@ -11,6 +11,7 @@
  * THIS SOFTWARE.
  */
 #include <stdio.h>
+#include <strings.h>
 
 #include <ext4fs.h>
 #include <crc32c.h>
@@ -59,6 +60,8 @@ void test_summary (void)
 
 int main (int argc, char **argv)
 {
+  uint8_t b[32];
+  uint32_t u32;
   (void) argc;
   (void) argv;
   TEST_EQ(offsetof(struct ext4fs_super_block, sb_default_mount_opts),
@@ -73,7 +76,11 @@ int main (int argc, char **argv)
           1024);
   TEST_EQ(sizeof(struct ext4fs_block_group_descriptor),
           64);
-  TEST_EQ(crc32c(0, "123456789", 9), 0xe3069283);
+  u32 = 0;
+  TEST_EQ(crc32c(0, &u32, 4), 0x48674BC7);
+  bzero(b, sizeof(b));
+  TEST_EQ(crc32c(0, b, sizeof(b)), 0x8A9136AAU);
+  TEST_EQ(crc32c(0, "123456789", 9), 0xE3069283U);
   test_summary();
   return 0;
 }

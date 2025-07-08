@@ -19,11 +19,13 @@ OUT_H =   crc32c_table.h
 CPPFLAGS = -I../include
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
 
-all: build gen
+all: build
 
-build: ${PROG}
+build: ${PROG} ${OUT_H}
 
-gen: build
+gen: ${OUT_H}
+
+${OUT_H}: ${PROG}
 	./${PROG} > ${OUT_H}
 
 ${OBJECTS}: ${HEADERS}
@@ -34,4 +36,4 @@ ${PROG}: ${OBJECTS}
 test: build
 	./${PROG}
 
-.PHONY: all build test
+.PHONY: all build gen test
