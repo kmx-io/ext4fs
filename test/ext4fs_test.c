@@ -80,7 +80,7 @@ int main (int argc, char **argv)
   TEST_EQ(sizeof(struct ext4fs_block_group_descriptor),
           64);
   u32 = 0;
-  TEST_EQ(crc32c(0, &u32, 4), 0x48674BC7);
+  TEST_EQ(crc32c(0, &u32, 4), 0x48674BC7U);
   bzero(b, sizeof(b));
   TEST_EQ(crc32c(0, b, sizeof(b)), 0x8A9136AAU);
   memset(b, -1, sizeof(b));
