@@ -102,6 +102,8 @@ int main (int argc, char **argv)
           0xE3069283U);
   TEST_EQ(crc32c(crc32c(0, "12345678", 8), "9", 1),
           0xE3069283U);
+  TEST_EQ(crc32c(crc32c(crc32c(0, "123", 3), "456", 3), "789", 3),
+          0xE3069283U);
   test_summary();
   return g_test_ko ? 1 : 0;
 }
