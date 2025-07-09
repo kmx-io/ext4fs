@@ -219,7 +219,6 @@ ext4fs_bgd_checksum_compute
  uint32_t block_group_id, uint16_t *dest)
 {
   uint32_t block_group_id_le;
-  uint32_t i;
   uint32_t seed;
   size_t size;
   struct ext4fs_block_group_descriptor tmp = {0};
@@ -239,13 +238,8 @@ ext4fs_bgd_checksum_compute
   if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_CSUM_SEED)
     seed = le32toh(sb->sb_checksum_seed);
   else {
-    seed = ~0;
-    i = 0;
-    while (i < sizeof(sb->sb_uuid)) {
-      seed = crc32c(seed, &sb->sb_uuid[i], 4);
-      i += 4;
-    }
     block_group_id_le = htole32(block_group_id);
+    seed = crc32c(0, sb->sb_uuid, sizeof(sb->sb_uuid));
     seed = crc32c(seed, &block_group_id_le, sizeof(block_group_id_le));
   }
   size = sb->sb_block_group_descriptor_size;

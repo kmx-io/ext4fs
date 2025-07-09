@@ -28,6 +28,8 @@ all: build
 
 build: ${PROG}
 
+crc32c.o: ../crc32c.c
+
 ext4fs.o: ../ext4fs.c
 
 uuid.o: ../uuid.c

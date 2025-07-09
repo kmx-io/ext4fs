@@ -80,12 +80,28 @@ int main (int argc, char **argv)
   TEST_EQ(sizeof(struct ext4fs_block_group_descriptor),
           64);
   u32 = 0;
-  TEST_EQ(crc32c(~0, &u32, 4), 0x48674BC7);
+  TEST_EQ(crc32c(0, &u32, 4), 0x48674BC7);
   bzero(b, sizeof(b));
-  TEST_EQ(crc32c(~0, b, sizeof(b)), 0x8A9136AAU);
+  TEST_EQ(crc32c(0, b, sizeof(b)), 0x8A9136AAU);
   memset(b, -1, sizeof(b));
-  TEST_EQ(crc32c(~0, b, sizeof(b)), 0x62A8AB43U);
-  TEST_EQ(crc32c(~0, "123456789", 9), 0xE3069283U);
+  TEST_EQ(crc32c(0, b, sizeof(b)), 0x62A8AB43U);
+  TEST_EQ(crc32c(0, "123456789", 9), 0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "1", 1), "23456789", 8),
+          0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "12", 2), "3456789", 7),
+          0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "123", 3), "456789", 6),
+          0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "1234", 4), "56789", 5),
+          0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "12345", 5), "6789", 4),
+          0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "123456", 6), "789", 3),
+          0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "1234567", 7), "89", 2),
+          0xE3069283U);
+  TEST_EQ(crc32c(crc32c(0, "12345678", 8), "9", 1),
+          0xE3069283U);
   test_summary();
   return g_test_ko ? 1 : 0;
 }
