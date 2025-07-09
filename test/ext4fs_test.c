@@ -75,15 +75,17 @@ int main (int argc, char **argv)
           0x3FC);
   TEST_EQ(sizeof(struct ext4fs_super_block),
           1024);
+  TEST_EQ(offsetof(struct ext4fs_block_group_descriptor, bgd_checksum),
+          0x1E);
   TEST_EQ(sizeof(struct ext4fs_block_group_descriptor),
           64);
   u32 = 0;
-  TEST_EQ(crc32c(0, &u32, 4), 0x48674BC7);
+  TEST_EQ(crc32c(~0, &u32, 4), 0x48674BC7);
   bzero(b, sizeof(b));
-  TEST_EQ(crc32c(0, b, sizeof(b)), 0x8A9136AAU);
+  TEST_EQ(crc32c(~0, b, sizeof(b)), 0x8A9136AAU);
   memset(b, -1, sizeof(b));
-  TEST_EQ(crc32c(0, b, sizeof(b)), 0x62A8AB43U);
-  TEST_EQ(crc32c(0, "123456789", 9), 0xE3069283U);
+  TEST_EQ(crc32c(~0, b, sizeof(b)), 0x62A8AB43U);
+  TEST_EQ(crc32c(~0, "123456789", 9), 0xE3069283U);
   test_summary();
-  return 0;
+  return g_test_ko ? 1 : 0;
 }

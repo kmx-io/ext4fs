@@ -219,9 +219,11 @@ ext4fs_bgd_checksum_compute
  uint32_t block_group_id, uint16_t *dest)
 {
   uint32_t block_group_id_le;
+  uint32_t i;
   uint32_t seed;
   size_t size;
   struct ext4fs_block_group_descriptor tmp = {0};
+  (void) block_group_id;
   if (! sb) {
     warnx("ext4fs_bgd_checksum_compute: NULL super block");
     return -1;
@@ -237,14 +239,18 @@ ext4fs_bgd_checksum_compute
   if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_CSUM_SEED)
     seed = le32toh(sb->sb_checksum_seed);
   else {
+    seed = ~0;
+    i = 0;
+    while (i < sizeof(sb->sb_uuid)) {
+      seed = crc32c(seed, &sb->sb_uuid[i], 4);
+      i += 4;
+    }
     block_group_id_le = htole32(block_group_id);
-    seed = crc32c(~0, sb->sb_uuid, 16);
     seed = crc32c(seed, &block_group_id_le, sizeof(block_group_id_le));
   }
-  if (ext4fs_64bit(sb))
-    size = 64;
-  else
-    size = 32;
+  size = sb->sb_block_group_descriptor_size;
+  if (size > sizeof(tmp))
+    return -1;
   memcpy(&tmp, bgd, size);
   tmp.bgd_checksum = 0;
   *dest = crc32c(seed, &tmp, size) & 0xFFFF;
@@ -773,7 +779,7 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          "                                        0x%08x},\n"
          "                   sb_default_hash_version: %u,\n"
          "                   sb_journal_backup_type: %u,\n"
-         "                   sb_group_descriptor_size: (U16) %u,\n"
+         "                   sb_block_group_descriptor_size: (U16) %u,\n"
          "                   sb_default_mount_opts: ",
          le32toh(sb->sb_journal_inode_number),
          le32toh(sb->sb_journal_device_number),
@@ -782,7 +788,7 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          sb->sb_hash_seed[3],
          sb->sb_default_hash_version,
          sb->sb_journal_backup_type,
-         le16toh(sb->sb_group_descriptor_size));
+         le16toh(sb->sb_block_group_descriptor_size));
   ext4fs_inspect_flag_names(le32toh(sb->sb_default_mount_opts),
                              ext4fs_mount_names);
   printf(",\n"

@@ -265,7 +265,7 @@ int main (int argc, char **argv)
   bzero(sb->sb_hash_seed, sizeof(sb->sb_hash_seed));
   sb->sb_default_hash_version = 0;
   sb->sb_journal_backup_type = 0;
-  sb->sb_group_descriptor_size = htole16(bgd_size);
+  sb->sb_block_group_descriptor_size = htole16(bgd_size);
   sb->sb_default_mount_opts = htole32(0);
   sb->sb_first_meta_block_group = htole32(0);
   sb->sb_newfs_time_lo = htole32(now);

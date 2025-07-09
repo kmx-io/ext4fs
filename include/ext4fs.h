@@ -198,7 +198,7 @@ struct ext4fs_super_block {
   uint32_t sb_hash_seed[4];
   uint8_t  sb_default_hash_version;
   uint8_t  sb_journal_backup_type;
-  uint16_t sb_group_descriptor_size;
+  uint16_t sb_block_group_descriptor_size;
   // 0x100
   uint32_t sb_default_mount_opts;
   uint32_t sb_first_meta_block_group;
@@ -277,6 +277,7 @@ struct ext4fs_block_group_descriptor {
   uint32_t bgd_inode_table_block_lo;
   uint16_t bgd_free_blocks_count_lo;
   uint16_t bgd_free_inodes_count_lo;
+  // 0x10
   uint16_t bgd_used_dirs_count_lo;
   uint16_t bgd_flags;
   uint32_t bgd_exclude_bitmap_block_lo;
@@ -284,17 +285,20 @@ struct ext4fs_block_group_descriptor {
   uint16_t bgd_inode_bitmap_checksum_lo;
   uint16_t bgd_inode_table_unused_lo;
   uint16_t bgd_checksum;
+  // 0x20
   uint32_t bgd_block_bitmap_block_hi;
   uint32_t bgd_inode_bitmap_block_hi;
   uint32_t bgd_inode_table_block_hi;
   uint16_t bgd_free_blocks_count_hi;
   uint16_t bgd_free_inodes_count_hi;
+  // 0x30
   uint16_t bgd_used_dirs_count_hi;
   uint16_t bgd_inode_table_unused_hi;
   uint32_t bgd_exclude_bitmap_block_hi;
   uint16_t bgd_block_bitmap_checksum_hi;
   uint16_t bgd_inode_bitmap_checksum_hi;
   uint32_t bgd_reserved;
+  // 0x40
 } __attribute__((packed));
 
 int

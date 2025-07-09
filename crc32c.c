@@ -17,8 +17,8 @@
 uint32_t crc32c (uint32_t crc, const void *data, size_t len)
 {
   const uint8_t *p = data;
-  crc = ~crc;
+  // crc = ~crc;
   while (len--)
-    crc = (crc >> 8) ^ crc32c_table[(crc ^ *p++) & 0xFF];
+    crc = (crc >> 8) ^ crc32c_table[(crc & 0xFF) ^ *p++];
   return ~crc;
 }
