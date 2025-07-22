@@ -297,7 +297,7 @@ struct ext4fs_block_group_descriptor {
   uint32_t bgd_exclude_bitmap_block_hi;
   uint16_t bgd_block_bitmap_checksum_hi;
   uint16_t bgd_inode_bitmap_checksum_hi;
-  uint32_t bgd_reserved;
+  uint32_t bgd_reserved_3c;
   // 0x40
 } __attribute__((packed));
 
@@ -387,6 +387,11 @@ ext4fs_inspect_block_group_descriptor
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
  uint32_t block_group_id);
+
+int
+ext4fs_inspect_block_group_descriptor_hex
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd);
 
 void ext4fs_inspect_creator_os (uint16_t creator_os);
 

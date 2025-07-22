@@ -62,6 +62,7 @@ void test_summary (void)
 int main (int argc, char **argv)
 {
   uint8_t b[32];
+  struct ext4fs_super_block sb = {0};
   uint32_t u32;
   (void) argc;
   (void) argv;
@@ -73,6 +74,7 @@ int main (int argc, char **argv)
           0x280);
   TEST_EQ(offsetof(struct ext4fs_super_block, sb_checksum),
           0x3FC);
+  TEST_EQ(sizeof(sb.sb_uuid), 16);
   TEST_EQ(sizeof(struct ext4fs_super_block),
           1024);
   TEST_EQ(offsetof(struct ext4fs_block_group_descriptor, bgd_checksum),

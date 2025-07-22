@@ -12,7 +12,7 @@
  */
 #include <crc32c.h>
 
-#include "../crc32c_table/crc32c_table.h"
+#include "crc32c_table/crc32c_table.h"
 
 uint32_t crc32c (uint32_t crc, const void *data, size_t len)
 {

@@ -219,10 +219,10 @@ ext4fs_bgd_checksum_compute
  uint32_t block_group_id, uint16_t *dest)
 {
   uint32_t block_group_id_le;
+  uint32_t crc;
   uint32_t seed;
   size_t size;
   struct ext4fs_block_group_descriptor tmp = {0};
-  (void) block_group_id;
   if (! sb) {
     warnx("ext4fs_bgd_checksum_compute: NULL super block");
     return -1;
@@ -235,6 +235,10 @@ ext4fs_bgd_checksum_compute
     warnx("ext4fs_bgd_checksum_compute: NULL dest");
     return -1;
   }
+  if (! (sb->sb_feature_ro_compat & EXT4FS_FEATURE_RO_COMPAT_METADATA_CSUM)) {
+    *dest = 0;
+    return 0;
+  }
   if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_CSUM_SEED)
     seed = le32toh(sb->sb_checksum_seed);
   else {
@@ -242,12 +246,20 @@ ext4fs_bgd_checksum_compute
     seed = crc32c(0, sb->sb_uuid, sizeof(sb->sb_uuid));
     seed = crc32c(seed, &block_group_id_le, sizeof(block_group_id_le));
   }
-  size = sb->sb_block_group_descriptor_size;
+  if (ext4fs_64bit(sb))
+    size = 32; //le16toh(sb->sb_block_group_descriptor_size);
+  else
+    size = 32;
   if (size > sizeof(tmp))
     return -1;
   memcpy(&tmp, bgd, size);
   tmp.bgd_checksum = 0;
-  *dest = crc32c(seed, &tmp, size) & 0xFFFF;
+  ext4fs_inspect_block_group_descriptor_hex(sb, &tmp);
+  printf("desc size: %zu\n", size);
+  printf("seed: %08X\n", seed);
+  crc = crc32c(seed, &tmp, size);
+  printf("crc: %08X\n", crc);
+  *dest = crc & 0xFFFF;
   return 0;
 }
 
@@ -561,7 +573,7 @@ ext4fs_inspect_block_group_descriptor
 {
   uint64_t block_bitmap_block;
   uint32_t block_bitmap_checksum;
-  uint16_t checksum;
+  uint16_t checksum = 0;
   uint16_t checksum_computed;
   uint64_t exclude_bitmap_block;
   uint32_t free_blocks_count;
@@ -619,6 +631,30 @@ ext4fs_inspect_block_group_descriptor
          inode_bitmap_checksum,
          inode_table_unused,
          checksum, checksum_computed);
+  return 0;
+}
+
+int
+ext4fs_inspect_block_group_descriptor_hex
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd)
+{
+  uint16_t i = 0;
+  const uint8_t *p;
+  uint16_t size;
+  if (! sb)
+    return -1;
+  if (! bgd)
+    return -1;
+  p = (uint8_t *) bgd;
+  size = le16toh(sb->sb_block_group_descriptor_size);
+  while (i < size) {
+    printf("%02X ", *p);
+    if (i % 16 == 15)
+      printf("\n");
+    i++;
+    p++;
+  }
   return 0;
 }
 
