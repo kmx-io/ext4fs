@@ -402,6 +402,9 @@ int ext4fs_inspect_flags_names (uint32_t flags,
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 
+int ext4fs_sb_checksum_compute (const struct ext4fs_super_block *sb,
+                                uint32_t *dest);
+
 int ext4fs_sb_last_error_time (const struct ext4fs_super_block *sb,
                             uint64_t *dest);
 

@@ -247,19 +247,15 @@ ext4fs_bgd_checksum_compute
     seed = crc32c(seed, &block_group_id_le, sizeof(block_group_id_le));
   }
   if (ext4fs_64bit(sb))
-    size = 32; //le16toh(sb->sb_block_group_descriptor_size);
+    size = le16toh(sb->sb_block_group_descriptor_size);
   else
     size = 32;
   if (size > sizeof(tmp))
     return -1;
   memcpy(&tmp, bgd, size);
   tmp.bgd_checksum = 0;
-  ext4fs_inspect_block_group_descriptor_hex(sb, &tmp);
-  printf("desc size: %zu\n", size);
-  printf("seed: %08X\n", seed);
   crc = crc32c(seed, &tmp, size);
-  printf("crc: %08X\n", crc);
-  *dest = crc & 0xFFFF;
+  *dest = (~crc) & 0xFFFF;
   return 0;
 }
 
@@ -625,7 +621,7 @@ ext4fs_inspect_block_group_descriptor
          "(U32) 0x%08X,\n"
          "                             bgd_inode_table_unused: "
          "(U32) %u,\n"
-         "                             bgd_checksum: (U16) 0x%04X}\t# 0x%04X\n",
+         "                             bgd_checksum: (U16) 0x%04X} # 0x%04X\n",
          exclude_bitmap_block,
          block_bitmap_checksum,
          inode_bitmap_checksum,
@@ -662,6 +658,8 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
 {
   uint64_t blocks_count;
   uint64_t check_time;
+  uint32_t checksum;
+  uint32_t checksum_computed = 0;
   uint64_t first_error_time;
   char     first_error_function[EXT4FS_FUNCTION_MAX + 1] = {0};
   uint64_t free_blocks_count;
@@ -680,6 +678,7 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   char str_last_error_time[32];
   char volume_name[EXT4FS_VOLUME_NAME_MAX + 1] = {0};
   uint64_t write_time;
+  checksum = le32toh(sb->sb_checksum);
   if (ext4fs_sb_blocks_count(sb, &blocks_count) ||
       ext4fs_sb_reserved_blocks_count(sb, &reserved_blocks_count) ||
       ext4fs_sb_free_blocks_count(sb, &free_blocks_count) ||
@@ -700,7 +699,8 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
       ext4fs_time_to_str(first_error_time, str_first_error_time,
                          sizeof(str_first_error_time)) ||
       ext4fs_time_to_str(last_error_time, str_last_error_time,
-                         sizeof(str_last_error_time)))
+                         sizeof(str_last_error_time)) ||
+      ext4fs_sb_checksum_compute(sb, &checksum_computed))
     return -1;
   strlcpy(volume_name, sb->sb_volume_name, sizeof(volume_name));
   strlcpy(last_mounted, sb->sb_last_mounted, sizeof(last_mounted));
@@ -940,9 +940,9 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
                             ext4fs_encoding_flag_names);
   printf(",\n"
          "                   sb_orphan_file_inode: (U32) %u,\n"
-         "                   sb_checksum: (U32) 0x%08X}\n",
+         "                   sb_checksum: (U32) 0x%08X} # 0x%08X\n",
          le32toh(sb->sb_orphan_file_inode),
-         le32toh(sb->sb_checksum));
+         checksum, checksum_computed);
   return 0;
 }
 
@@ -992,6 +992,29 @@ int ext4fs_sb_check_time (const struct ext4fs_super_block *sb,
   *dest = le32toh(sb->sb_check_time_lo);
   if (ext4fs_64bit(sb))
     *dest |= ((uint64_t) sb->sb_check_time_hi) << 32;
+  return 0;
+}
+
+int
+ext4fs_sb_checksum_compute
+(const struct ext4fs_super_block *sb,
+ uint32_t *dest)
+{
+  uint32_t crc = 0;
+  if (! sb) {
+    warnx("ext4fs_sb_checksum_compute: NULL super block");
+    return -1;
+  }
+  if (! dest) {
+    warnx("ext4fs_sb_checksum_compute: NULL dest");
+    return -1;
+  }
+  if (! (sb->sb_feature_ro_compat & EXT4FS_FEATURE_RO_COMPAT_METADATA_CSUM)) {
+    *dest = 0;
+    return 0;
+  }
+  crc = crc32c(crc, sb, offsetof(struct ext4fs_super_block, sb_checksum));
+  *dest = ~crc;
   return 0;
 }
 
