@@ -454,6 +454,7 @@ ext4fs_bgd_used_dirs_count
 struct ext4fs_block_group_descriptor *
 ext4fs_block_group_descriptor_read
 (struct ext4fs_block_group_descriptor *bgd,
+ uint64_t bgd_count,
  int fd,
  const struct ext4fs_super_block *sb)
 {
@@ -471,7 +472,8 @@ ext4fs_block_group_descriptor_read
     return NULL;
   }
   done = 0;
-  remaining = sizeof(struct ext4fs_block_group_descriptor);
+  remaining = sizeof(struct ext4fs_block_group_descriptor) *
+    bgd_count;
   while (remaining > 0) {
     r = read(fd, (char *) bgd + done, remaining);
     if (r < 0) {
@@ -500,7 +502,9 @@ ext4fs_disklabel_get (struct disklabel *dl, int fd)
 
 int ext4fs_inspect (const char *dev, int fd)
 {
-  struct ext4fs_block_group_descriptor bgd = {0};
+  struct ext4fs_block_group_descriptor *bgd = NULL;
+  uint64_t                              bgd_count = 0;
+  uint64_t i;
   struct ext4fs_super_block sb = {0};
   uint64_t size = 0;
   if (ext4fs_size(dev, fd, &size) ||
@@ -511,10 +515,22 @@ int ext4fs_inspect (const char *dev, int fd)
     return -1;
   if (ext4fs_inspect_super_block(&sb))
     return -1;
-  if (! ext4fs_block_group_descriptor_read(&bgd, fd, &sb))
+  if (! (bgd_count = ext4fs_sb_block_group_count(&sb)))
     return -1;
-  if (ext4fs_inspect_block_group_descriptor(&sb, &bgd, 0))
+  printf("ext4fs_block_group_count: " CONFIGURE_FMT_UINT64 "\n",
+         bgd_count);
+  bgd = calloc(bgd_count, sizeof(struct ext4fs_block_group_descriptor));
+  if (! bgd)
     return -1;
+  if (! ext4fs_block_group_descriptor_read(bgd, bgd_count, fd, &sb))
+    return -1;
+  i = 0;
+  while (i < bgd_count) {
+    printf("# " CONFIGURE_FMT_UINT64 "\n", i);
+    if (ext4fs_inspect_block_group_descriptor(&sb, bgd + i, i))
+      return -1;
+    i++;
+  }
   printf("EOF\n");
   return 0;
 }
@@ -944,6 +960,19 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
          le32toh(sb->sb_orphan_file_inode),
          checksum, checksum_computed);
   return 0;
+}
+
+uint64_t ext4fs_sb_block_group_count (const struct ext4fs_super_block *sb)
+{
+  uint32_t blocks_per_group;
+  uint64_t count;
+  count = le32toh(sb->sb_blocks_count_lo);
+  if (ext4fs_64bit(sb))
+    count |= (uint64_t) le32toh(sb->sb_blocks_count_hi) << 32;
+  blocks_per_group = le32toh(sb->sb_blocks_per_group);
+  count += blocks_per_group - 1;
+  count /= blocks_per_group;
+  return count;
 }
 
 int ext4fs_sb_block_size (const struct ext4fs_super_block *sb,

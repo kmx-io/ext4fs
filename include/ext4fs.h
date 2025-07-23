@@ -377,7 +377,9 @@ ext4fs_disklabel_get
 
 struct ext4fs_block_group_descriptor *
 ext4fs_block_group_descriptor_read
-(struct ext4fs_block_group_descriptor *bgd, int fd,
+(struct ext4fs_block_group_descriptor *bgd,
+ uint64_t bgd_count,
+ int fd,
  const struct ext4fs_super_block *sb);
 
 int ext4fs_inspect (const char *dev, int fd);
@@ -401,6 +403,10 @@ int ext4fs_inspect_flags_names (uint32_t flags,
                                 const s_value_name *names);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
+
+uint64_t
+ext4fs_sb_block_group_count
+(const struct ext4fs_super_block *sb);
 
 int ext4fs_sb_checksum_compute (const struct ext4fs_super_block *sb,
                                 uint32_t *dest);
