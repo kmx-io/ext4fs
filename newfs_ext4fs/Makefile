@@ -24,9 +24,14 @@ HEADERS =	../crc32c_table/crc32c_table.h \
 CPPFLAGS = -I../include -D${UNAME}
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
 
+CLEANFILES = ${PROG} *.o
+
 all: build
 
 build: ${PROG}
+
+clean:
+	rm -f ${CLEANFILES}
 
 ext4fs.o: ../ext4fs.c
 
@@ -37,4 +42,4 @@ ${OBJECTS}: ${HEADERS}
 ${PROG}: ${OBJECTS}
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJECTS} -o ${PROG}
 
-.PHONY: all build
+.PHONY: all build clean

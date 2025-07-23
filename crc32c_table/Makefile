@@ -19,9 +19,14 @@ OUT_H =   crc32c_table.h
 CPPFLAGS = -I../include
 CFLAGS = -W -Wall -Werror -O0 -g -pedantic -std=c11
 
+CLEANFILES = ${PROG} *.o ${OUT_H}
+
 all: build
 
 build: ${PROG} ${OUT_H}
+
+clean:
+	rm -f ${CLEANFILES}
 
 gen: ${OUT_H}
 
@@ -36,4 +41,4 @@ ${PROG}: ${OBJECTS}
 test: build
 	./${PROG}
 
-.PHONY: all build gen test
+.PHONY: all build clean gen test

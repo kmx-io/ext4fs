@@ -503,7 +503,7 @@ ext4fs_disklabel_get (struct disklabel *dl, int fd)
 struct ext4fs_inode *
 ext4fs_inode_read
 (const struct ext4fs_super_block *sb,
- const struct ext4fs_block_group_descriptor *bgd,
+ const struct ext4fs_block_group_descriptor *bgd_table,
  struct ext4fs_inode *inode, 
  uint32_t inode_number,
  int fd)
@@ -516,18 +516,22 @@ ext4fs_inode_read
   ssize_t done;
   ssize_t r;
   ssize_t remaining;
-  if (!inode || !sb || !bgd) {
+  if (! inode || ! sb || ! bgd_table) {
     fprintf(stderr, "ext4fs_inode_read: NULL parameter\n");
     return NULL;
   }
   if (inode_number < 1) {
-    fprintf(stderr, "ext4fs_inode_read: invalid inode number %u", inode_number);
+    fprintf(stderr, "ext4fs_inode_read: invalid inode number %u\n", inode_number);
     return NULL;
   }
   block_group = (inode_number - 1) / le32toh(sb->sb_inodes_per_group);
   inode_index = (inode_number - 1) % le32toh(sb->sb_inodes_per_group);
-  if (ext4fs_sb_block_size(sb, &block_size) ||
-      ext4fs_bgd_inode_table_block(sb, &bgd[block_group], &inode_table_block)) {
+  if (ext4fs_sb_block_size(sb, &block_size)) {
+    fprintf(stderr, "ext4fs_inode_read: ext4fs_sb_block_size\n");
+    return NULL;
+  }
+  if (ext4fs_bgd_inode_table_block(sb, &bgd_table[block_group], &inode_table_block)) {
+    fprintf(stderr, "ext4fs_inode_read: ext4fs_bgd_inode_table_block\n");
     return NULL;
   }
   inode_offset = inode_table_block * block_size + 
@@ -579,7 +583,7 @@ int ext4fs_inspect (const char *dev, int fd)
   struct ext4fs_block_group_descriptor *bgd = NULL;
   uint64_t                              bgd_count = 0;
   uint64_t i;
-  uint64_t ino = 0;
+  uint32_t inode_number = 0;
   struct ext4fs_inode inode = {0};
   struct ext4fs_super_block sb = {0};
   uint64_t size = 0;
@@ -603,34 +607,41 @@ int ext4fs_inspect (const char *dev, int fd)
   i = 0;
   while (i < bgd_count) {
     printf("# " CONFIGURE_FMT_UINT64 "\n", i);
-    if (ext4fs_inspect_block_group_descriptor(&sb, bgd + i, i))
+    if (ext4fs_inspect_block_group_descriptor(&sb, bgd + i, i)) {
+      fprintf(stderr, "ext4fs_inspect:"
+              " ext4fs_inspect_block_group_descriptor\n");
       return -1;
+    }
     i++;
   }
-  ino = 5;
-  if (ext4fs_inode_read(&sb, &bgd[0], &inode, ino, fd))
+  inode_number = 5;
+  if (! ext4fs_inode_read(&sb, bgd, &inode, inode_number, fd)) { 
+    fprintf(stderr, "ext4fs_inspect: ext4fs_inode_read\n");
     return -1;
-  if (ext4fs_inspect_inode(&sb, &inode, ino))
+  }
+  printf("# %u\n", inode_number);
+  if (ext4fs_inspect_inode(&sb, &inode)) {
+    fprintf(stderr, "ext4fs_inspect: ext4fs_inspect_inode\n");
     return -1;
+  }
   printf("EOF\n");
   return 0;
 }
 
 int ext4fs_inspect_inode (const struct ext4fs_super_block *sb,
-                          const struct ext4fs_inode *inode,
-                          uint32_t inode_number)
+                          const struct ext4fs_inode *inode)
 {
   uint32_t uid;
-  if (! inode || ! inode_number) {
+  if (! inode) {
     fprintf(stderr, "ext4fs_inspect_inode: invalid argument\n");
     return -1;
   }
-  if (ext4fs_inode_uid(sb, inode, &uid))
+  if (ext4fs_inode_uid(sb, inode, &uid)) {
+    fprintf(stderr, "ext4fs_inspect_inode: ext4fs_inode_uid\n");
     return -1;
-  printf("# %u\n"
-         "%%Ext4fs.Inode{i_mode: (U16) %u,\n"
-         "               i_uid: (U32) %u}\n",
-         inode_number,
+  }
+  printf("%%Ext4fs.Inode{i_mode: (U16) %u,\n"
+         "              i_uid: (U32) %u}\n",
          le16toh(inode->i_mode),
          uid);
   return 0;

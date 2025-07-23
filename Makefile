@@ -18,7 +18,17 @@ build:
 	${MAKE} -C newfs_ext4fs build
 	${MAKE} -C test build
 
+clean:
+	${MAKE} -C crc32c_table clean
+	${MAKE} -C inspect_ext4fs clean
+	${MAKE} -C newfs_ext4fs clean
+	${MAKE} -C test clean
+
+re:
+	${MAKE} clean
+	${MAKE} build
+
 test: build
 	${MAKE} -C test test
 
-.PHONY: all build test
+.PHONY: all build clean re test

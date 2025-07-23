@@ -480,8 +480,7 @@ int ext4fs_inspect_flags_names (uint32_t flags,
                                 const s_value_name *names);
 
 int ext4fs_inspect_inode (const struct ext4fs_super_block *sb,
-                          const struct ext4fs_inode *inode,
-                          uint32_t inode_number);
+                          const struct ext4fs_inode *inode);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 
