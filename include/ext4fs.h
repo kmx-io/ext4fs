@@ -105,6 +105,14 @@ extern const s_value_name ext4fs_feature_ro_compat_names[];
 
 extern const s_value_name ext4fs_flag_names[];
 
+#define EXT4FS_INODE_BAD_BLOCKS    1
+#define EXT4FS_INODE_ROOT_DIR      2
+#define EXT4FS_INODE_USER_QUOTA    3
+#define EXT4FS_INODE_GROUP_QUOTA   4
+#define EXT4FS_INODE_BOOT_LOADER   5
+#define EXT4FS_INODE_JOURNAL       8
+#define EXT4FS_INODE_FIRST        11
+
 #define EXT4FS_MOUNT_READONLY              0x0001
 #define EXT4FS_MOUNT_NO_ATIME              0x0002
 #define EXT4FS_MOUNT_DIRSYNC               0x0004
@@ -301,6 +309,61 @@ struct ext4fs_block_group_descriptor {
   // 0x40
 } __attribute__((packed));
 
+#define EXT4FS_EXTENT_HEADER_MAGIC  0xF30A
+
+struct ext4fs_extent_header {
+  uint16_t eh_magic;
+  uint16_t eh_entries;
+  uint16_t eh_max;
+  uint16_t eh_depth;
+  uint32_t eh_generation;
+};
+
+struct ext4fs_inode {
+  uint16_t i_mode;
+  uint16_t i_uid_lo;
+  uint32_t i_size_lo;
+  uint32_t i_atime_lo;
+  uint32_t i_ctime_lo;
+  uint32_t i_mtime_lo;
+  uint32_t i_dtime;
+  uint16_t i_gid_lo;
+  uint16_t i_links_count;
+  uint32_t i_blocks_lo;
+  uint32_t i_flags;
+  uint32_t i_os_dependent_1;
+  union {
+    struct {
+      uint32_t i_block[15];
+    };
+    struct {
+      struct ext4fs_extent_header i_extents; // EXT4FS_INODE_FLAGS_EXTENTS
+    };
+  };
+  uint32_t i_version_lo;
+  uint32_t i_file_acl_lo;
+  uint32_t i_size_hi;
+  uint32_t i_padding;
+  union {
+    struct {
+      uint16_t i_blocks_hi;
+      uint16_t i_file_acl_hi;
+      uint16_t i_uid_hi;
+      uint16_t i_gid_hi;
+    };
+    uint16_t i_checksum_lo;
+  };
+  uint16_t i_extra_isize;
+  uint16_t i_checksum_hi;
+  uint32_t i_ctime_hi;
+  uint32_t i_mtime_hi;
+  uint32_t i_atime_hi;
+  uint32_t i_crtime_lo;
+  uint32_t i_crtime_hi;
+  uint32_t i_version_hi;
+  uint32_t i_project_id;
+} __attribute__((packed));
+
 int
 ext4fs_bgd_block_bitmap_block
 (const struct ext4fs_super_block *sb,
@@ -377,10 +440,24 @@ ext4fs_disklabel_get
 
 struct ext4fs_block_group_descriptor *
 ext4fs_block_group_descriptor_read
-(struct ext4fs_block_group_descriptor *bgd,
+(const struct ext4fs_super_block *sb,
+ struct ext4fs_block_group_descriptor *bgd,
  uint64_t bgd_count,
- int fd,
- const struct ext4fs_super_block *sb);
+ int fd);
+
+struct ext4fs_inode *
+ext4fs_inode_read
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ struct ext4fs_inode *inode, 
+ uint32_t inode_number,
+ int fd);
+
+int
+ext4fs_inode_uid
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint32_t *dest);
 
 int ext4fs_inspect (const char *dev, int fd);
 
@@ -401,6 +478,10 @@ void ext4fs_inspect_errors (uint16_t errors);
 
 int ext4fs_inspect_flags_names (uint32_t flags,
                                 const s_value_name *names);
+
+int ext4fs_inspect_inode (const struct ext4fs_super_block *sb,
+                          const struct ext4fs_inode *inode,
+                          uint32_t inode_number);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 

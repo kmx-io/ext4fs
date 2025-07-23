@@ -171,15 +171,15 @@ ext4fs_bgd_block_bitmap_block
  uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_block_bitmap_block: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_block_bitmap_block: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_block_bitmap_block: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_block_bitmap_block: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_block_bitmap_block: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_block_bitmap_block: NULL dest\n");
     return -1;
   }
   *dest = le32toh(bgd->bgd_block_bitmap_block_lo);
@@ -195,15 +195,15 @@ ext4fs_bgd_block_bitmap_checksum
  uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_block_bitmap_checksum: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_block_bitmap_checksum: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_block_bitmap_checksum: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_block_bitmap_checksum: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_block_bitmap_checksum: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_block_bitmap_checksum: NULL dest\n");
     return -1;
   }
   *dest = le16toh(bgd->bgd_block_bitmap_checksum_lo);
@@ -224,15 +224,15 @@ ext4fs_bgd_checksum_compute
   size_t size;
   struct ext4fs_block_group_descriptor tmp = {0};
   if (! sb) {
-    warnx("ext4fs_bgd_checksum_compute: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_checksum_compute: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_checksum_compute: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_checksum_compute: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_checksum_compute: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_checksum_compute: NULL dest\n");
     return -1;
   }
   if (! (sb->sb_feature_ro_compat & EXT4FS_FEATURE_RO_COMPAT_METADATA_CSUM)) {
@@ -266,15 +266,15 @@ ext4fs_bgd_exclude_bitmap_block
  uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_exclude_bitmap_block: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_exclude_bitmap_block: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_exclude_bitmap_block: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_exclude_bitmap_block: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_exclude_bitmap_block: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_exclude_bitmap_block: NULL dest\n");
     return -1;
   }
   *dest = le32toh(bgd->bgd_exclude_bitmap_block_lo);
@@ -290,15 +290,15 @@ ext4fs_bgd_free_blocks_count
  uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_free_blocks_count: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_free_blocks_count: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_free_blocks_count: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_free_blocks_count: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_free_blocks_count: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_free_blocks_count: NULL dest\n");
     return -1;
   }
   *dest = le16toh(bgd->bgd_free_blocks_count_lo);
@@ -314,15 +314,15 @@ ext4fs_bgd_free_inodes_count
  uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_free_inodes_count: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_free_inodes_count: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_free_inodes_count: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_free_inodes_count: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_free_inodes_count: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_free_inodes_count: NULL dest\n");
     return -1;
   }
   *dest = le16toh(bgd->bgd_free_inodes_count_lo);
@@ -338,15 +338,15 @@ ext4fs_bgd_inode_bitmap_block
  uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_inode_bitmap_block: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_inode_bitmap_block: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_inode_bitmap_block: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_inode_bitmap_block: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_inode_bitmap_block: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_inode_bitmap_block: NULL dest\n");
     return -1;
   }
   *dest = le32toh(bgd->bgd_inode_bitmap_block_lo);
@@ -362,15 +362,15 @@ ext4fs_bgd_inode_bitmap_checksum
  uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_inode_bitmap_checksum: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_inode_bitmap_checksum: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_inode_bitmap_checksum: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_inode_bitmap_checksum: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_inode_bitmap_checksum: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_inode_bitmap_checksum: NULL dest\n");
     return -1;
   }
   *dest = le16toh(bgd->bgd_inode_bitmap_checksum_lo);
@@ -386,15 +386,15 @@ ext4fs_bgd_inode_table_block
  uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_inode_table_block: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_inode_table_block: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_inode_table_block: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_inode_table_block: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_inode_table_block: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_inode_table_block: NULL dest\n");
     return -1;
   }
   *dest = le32toh(bgd->bgd_inode_table_block_lo);
@@ -410,15 +410,15 @@ ext4fs_bgd_inode_table_unused
  uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_inode_table_unused: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_inode_table_unused: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_inode_table_unused: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_inode_table_unused: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_inode_table_unused: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_inode_table_unused: NULL dest\n");
     return -1;
   }
   *dest = le16toh(bgd->bgd_inode_table_unused_lo);
@@ -434,15 +434,15 @@ ext4fs_bgd_used_dirs_count
  uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_bgd_used_dirs_count: NULL super block");
+    fprintf(stderr, "ext4fs_bgd_used_dirs_count: NULL super block\n");
     return -1;
   }
   if (! bgd) {
-    warnx("ext4fs_bgd_used_dirs_count: NULL block group descriptor");
+    fprintf(stderr, "ext4fs_bgd_used_dirs_count: NULL block group descriptor\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_bgd_used_dirs_count: NULL dest");
+    fprintf(stderr, "ext4fs_bgd_used_dirs_count: NULL dest\n");
     return -1;
   }
   *dest = le16toh(bgd->bgd_used_dirs_count_lo);
@@ -453,10 +453,10 @@ ext4fs_bgd_used_dirs_count
 
 struct ext4fs_block_group_descriptor *
 ext4fs_block_group_descriptor_read
-(struct ext4fs_block_group_descriptor *bgd,
+(const struct ext4fs_super_block *sb,
+ struct ext4fs_block_group_descriptor *bgd,
  uint64_t bgd_count,
- int fd,
- const struct ext4fs_super_block *sb)
+ int fd)
 {
   uint32_t block_size;
   ssize_t done;
@@ -500,11 +500,87 @@ ext4fs_disklabel_get (struct disklabel *dl, int fd)
 
 #endif /* OpenBSD */
 
+struct ext4fs_inode *
+ext4fs_inode_read
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_block_group_descriptor *bgd,
+ struct ext4fs_inode *inode, 
+ uint32_t inode_number,
+ int fd)
+{
+  uint32_t block_group;
+  uint32_t block_size;
+  uint64_t inode_table_block;
+  uint32_t inode_index;
+  uint64_t inode_offset;
+  ssize_t done;
+  ssize_t r;
+  ssize_t remaining;
+  if (!inode || !sb || !bgd) {
+    fprintf(stderr, "ext4fs_inode_read: NULL parameter\n");
+    return NULL;
+  }
+  if (inode_number < 1) {
+    fprintf(stderr, "ext4fs_inode_read: invalid inode number %u", inode_number);
+    return NULL;
+  }
+  block_group = (inode_number - 1) / le32toh(sb->sb_inodes_per_group);
+  inode_index = (inode_number - 1) % le32toh(sb->sb_inodes_per_group);
+  if (ext4fs_sb_block_size(sb, &block_size) ||
+      ext4fs_bgd_inode_table_block(sb, &bgd[block_group], &inode_table_block)) {
+    return NULL;
+  }
+  inode_offset = inode_table_block * block_size + 
+                 inode_index * le16toh(sb->sb_inode_size);
+  if (lseek(fd, inode_offset, SEEK_SET) < 0) {
+    warn("ext4fs_inode_read: lseek %lu", inode_offset);
+    return NULL;
+  }
+  done = 0;
+  remaining = sizeof(struct ext4fs_inode);
+  while (remaining > 0) {
+    r = read(fd, (char *) inode + done, remaining);
+    if (r < 0) {
+      warn("ext4fs_inode_read: read inode %ld", remaining);
+      return NULL;
+    }
+    done += r;
+    remaining -= r;
+  }
+  return inode;
+}
+
+int
+ext4fs_inode_uid
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint32_t *dest)
+{
+  if (! sb) {
+    fprintf(stderr, "ext4fs_inode_uid: NULL super block\n");
+    return -1;
+  }
+  if (! inode) {
+    fprintf(stderr, "ext4fs_inode_uid: NULL inode\n");
+    return -1;
+  }
+  if (! dest) {
+    fprintf(stderr, "ext4fs_inode_uid: NULL dest\n");
+    return -1;
+  }
+  *dest = le16toh(inode->i_uid_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(inode->i_uid_hi) << 16;
+  return 0;
+}
+
 int ext4fs_inspect (const char *dev, int fd)
 {
   struct ext4fs_block_group_descriptor *bgd = NULL;
   uint64_t                              bgd_count = 0;
   uint64_t i;
+  uint64_t ino = 0;
+  struct ext4fs_inode inode = {0};
   struct ext4fs_super_block sb = {0};
   uint64_t size = 0;
   if (ext4fs_size(dev, fd, &size) ||
@@ -522,7 +598,7 @@ int ext4fs_inspect (const char *dev, int fd)
   bgd = calloc(bgd_count, sizeof(struct ext4fs_block_group_descriptor));
   if (! bgd)
     return -1;
-  if (! ext4fs_block_group_descriptor_read(bgd, bgd_count, fd, &sb))
+  if (! ext4fs_block_group_descriptor_read(&sb, bgd, bgd_count, fd))
     return -1;
   i = 0;
   while (i < bgd_count) {
@@ -531,7 +607,32 @@ int ext4fs_inspect (const char *dev, int fd)
       return -1;
     i++;
   }
+  ino = 5;
+  if (ext4fs_inode_read(&sb, &bgd[0], &inode, ino, fd))
+    return -1;
+  if (ext4fs_inspect_inode(&sb, &inode, ino))
+    return -1;
   printf("EOF\n");
+  return 0;
+}
+
+int ext4fs_inspect_inode (const struct ext4fs_super_block *sb,
+                          const struct ext4fs_inode *inode,
+                          uint32_t inode_number)
+{
+  uint32_t uid;
+  if (! inode || ! inode_number) {
+    fprintf(stderr, "ext4fs_inspect_inode: invalid argument\n");
+    return -1;
+  }
+  if (ext4fs_inode_uid(sb, inode, &uid))
+    return -1;
+  printf("# %u\n"
+         "%%Ext4fs.Inode{i_mode: (U16) %u,\n"
+         "               i_uid: (U32) %u}\n",
+         inode_number,
+         le16toh(inode->i_mode),
+         uid);
   return 0;
 }
 
@@ -543,7 +644,8 @@ void ext4fs_inspect_os (uint32_t os)
     printf("(U32) %u", os);
 }
 
-int ext4fs_inspect_flag_names (uint32_t flags, const s_value_name *names)
+int ext4fs_inspect_flag_names (uint32_t flags,
+                               const s_value_name *names)
 {
   char first;
   const s_value_name *i;
@@ -979,11 +1081,11 @@ int ext4fs_sb_block_size (const struct ext4fs_super_block *sb,
                           uint32_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_block_size: NULL super block");
+    fprintf(stderr, "ext4fs_sb_block_size: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_block_size: NULL dest");
+    fprintf(stderr, "ext4fs_sb_block_size: NULL dest\n");
     return -1;
   }
   *dest = 1 << (sb->sb_log_block_size + 10);
@@ -994,11 +1096,11 @@ int ext4fs_sb_blocks_count (const struct ext4fs_super_block *sb,
                             uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_blocks_count: NULL super block");
+    fprintf(stderr, "ext4fs_sb_blocks_count: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_blocks_count: NULL dest");
+    fprintf(stderr, "ext4fs_sb_blocks_count: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_blocks_count_lo);
@@ -1011,11 +1113,11 @@ int ext4fs_sb_check_time (const struct ext4fs_super_block *sb,
                           uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_check_time: NULL super block");
+    fprintf(stderr, "ext4fs_sb_check_time: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_check_time: NULL dest");
+    fprintf(stderr, "ext4fs_sb_check_time: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_check_time_lo);
@@ -1031,11 +1133,11 @@ ext4fs_sb_checksum_compute
 {
   uint32_t crc = 0;
   if (! sb) {
-    warnx("ext4fs_sb_checksum_compute: NULL super block");
+    fprintf(stderr, "ext4fs_sb_checksum_compute: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_checksum_compute: NULL dest");
+    fprintf(stderr, "ext4fs_sb_checksum_compute: NULL dest\n");
     return -1;
   }
   if (! (sb->sb_feature_ro_compat & EXT4FS_FEATURE_RO_COMPAT_METADATA_CSUM)) {
@@ -1051,11 +1153,11 @@ int ext4fs_sb_first_error_time (const struct ext4fs_super_block *sb,
                              uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_first_error_time: NULL super block");
+    fprintf(stderr, "ext4fs_sb_first_error_time: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_first_error_time: NULL dest");
+    fprintf(stderr, "ext4fs_sb_first_error_time: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_first_error_time_lo);
@@ -1068,11 +1170,11 @@ int ext4fs_sb_free_blocks_count (const struct ext4fs_super_block *sb,
                               uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_free_blocks_count: NULL super block");
+    fprintf(stderr, "ext4fs_sb_free_blocks_count: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_free_blocks_count: NULL dest");
+    fprintf(stderr, "ext4fs_sb_free_blocks_count: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_free_blocks_count_lo);
@@ -1085,11 +1187,11 @@ int ext4fs_sb_last_error_time (const struct ext4fs_super_block *sb,
                                uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_last_error_time: NULL super block");
+    fprintf(stderr, "ext4fs_sb_last_error_time: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_last_error_time: NULL dest");
+    fprintf(stderr, "ext4fs_sb_last_error_time: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_last_error_time_lo);
@@ -1102,11 +1204,11 @@ int ext4fs_sb_mount_time (const struct ext4fs_super_block *sb,
                           uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_mount_time: NULL super block");
+    fprintf(stderr, "ext4fs_sb_mount_time: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_mount_time: NULL dest");
+    fprintf(stderr, "ext4fs_sb_mount_time: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_mount_time_lo);
@@ -1119,11 +1221,11 @@ int ext4fs_sb_newfs_time (const struct ext4fs_super_block *sb,
                           uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_newfs_time: NULL super block");
+    fprintf(stderr, "ext4fs_sb_newfs_time: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_newfs_time: NULL dest");
+    fprintf(stderr, "ext4fs_sb_newfs_time: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_newfs_time_lo);
@@ -1136,11 +1238,11 @@ int ext4fs_sb_reserved_blocks_count (const struct ext4fs_super_block *sb,
                                      uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_reserved_blocks_count: NULL super block");
+    fprintf(stderr, "ext4fs_sb_reserved_blocks_count: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_reserved_blocks_count: NULL dest");
+    fprintf(stderr, "ext4fs_sb_reserved_blocks_count: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_reserved_blocks_count_lo);
@@ -1157,7 +1259,7 @@ int ext4fs_size (const char *dev, int fd, uint64_t *dest)
   struct partition *part;
   int32_t sector_size;
   if (! dev || ! dev[0]) {
-    warnx("ext4fs_size: invalid dev");
+    fprintf(stderr, "ext4fs_size: invalid dev\n");
     return -1;
   }
   if (! ext4fs_disklabel_get(&dl, fd))
@@ -1166,16 +1268,16 @@ int ext4fs_size (const char *dev, int fd, uint64_t *dest)
   if ('0' <= *dev_last && *dev_last <= '9')
     part = &dl.d_partitions[0];
   else if (*dev_last < 'a' || *dev_last > 'p') {
-    warnx("ext4fs_size: %s: invalid partition letter", dev);
+    fprintf(stderr, "ext4fs_size: %s: invalid partition letter", dev);
     return -1;
   }
   else
     part = &dl.d_partitions[*dev_last - 'a'];
   if (DL_GETPSIZE(part) == 0)
-    warnx("ext4fs_size: %s: partition is unavailable", dev);
+    fprintf(stderr, "ext4fs_size: %s: partition is unavailable", dev);
   sector_size = dl.d_secsize;
   if (sector_size <= 0) {
-    warnx("ext4fs_size: %s: no sector size in disklabel", dev);
+    fprintf(stderr, "ext4fs_size: %s: no sector size in disklabel", dev);
     return -1;
   }
   *dest = DL_GETPSIZE(part) / sector_size * sector_size;
@@ -1217,12 +1319,12 @@ int ext4fs_time_to_str (time_t time, char *str, size_t size)
 {
   struct tm *local;
   if (size < 25) {
-    warnx("time_to_str: size < 25");
+    fprintf(stderr, "time_to_str: size < 25\n");
     return -1;
   }
   local = localtime(&time);
   if (! strftime(str, size, "%F %T %Z", local)) {
-    warnx("time_to_str: strftime");
+    fprintf(stderr, "time_to_str: strftime\n");
     return -1;
   }
   return 0;
@@ -1232,11 +1334,11 @@ int ext4fs_sb_write_time (const struct ext4fs_super_block *sb,
                           uint64_t *dest)
 {
   if (! sb) {
-    warnx("ext4fs_sb_write_time: NULL super block");
+    fprintf(stderr, "ext4fs_sb_write_time: NULL super block\n");
     return -1;
   }
   if (! dest) {
-    warnx("ext4fs_sb_write_time: NULL dest");
+    fprintf(stderr, "ext4fs_sb_write_time: NULL dest\n");
     return -1;
   }
   *dest = le32toh(sb->sb_write_time_lo);
