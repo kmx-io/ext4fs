@@ -23,6 +23,7 @@
 # endif
 #endif
 
+#include <assert.h>
 #include <endian.h>
 #include <err.h>
 #include <fcntl.h>
@@ -170,18 +171,9 @@ ext4fs_bgd_block_bitmap_block
  const struct ext4fs_block_group_descriptor *bgd,
  uint64_t *dest)
 {
-  if (! sb) {
-    fprintf(stderr, "ext4fs_bgd_block_bitmap_block: NULL super block\n");
-    return -1;
-  }
-  if (! bgd) {
-    fprintf(stderr, "ext4fs_bgd_block_bitmap_block: NULL block group descriptor\n");
-    return -1;
-  }
-  if (! dest) {
-    fprintf(stderr, "ext4fs_bgd_block_bitmap_block: NULL dest\n");
-    return -1;
-  }
+  assert(sb);
+  assert(bgd);
+  assert(dest);
   *dest = le32toh(bgd->bgd_block_bitmap_block_lo);
   if (ext4fs_64bit(sb))
     *dest |= (uint64_t) le32toh(bgd->bgd_block_bitmap_block_hi) << 32;
@@ -543,20 +535,21 @@ ext4fs_inode_256_read
             "ext4fs_inode_256_read: ext4fs_bgd_inode_table_block\n");
     return NULL;
   }
-  inode_offset = inode_table_block * block_size + 
-                 inode_index * le16toh(sb->sb_inode_size);
+  if (ext4fs_sb_inode_size(sb, &inode_size))
+    return NULL;
+  inode_offset = inode_table_block * block_size +
+    inode_index * inode_size;
   if (lseek(fd, inode_offset, SEEK_SET) < 0) {
     warn("ext4fs_inode_256_read: lseek %lu", inode_offset);
     return NULL;
   }
-  inode_size = ext4fs_inode_size(sb);
   if (sizeof(struct ext4fs_inode_256) != inode_size) {
     fprintf(stderr, "ext4fs_inode_256_read: invalid inode size: %u",
             inode_size);
     return NULL;
   }
   done = 0;
-  remaining = sizeof(struct ext4fs_inode_256);
+  remaining = inode_size;
   while (remaining > 0) {
     r = read(fd, (char *) inode_256 + done, remaining);
     if (r < 0) {
@@ -569,9 +562,28 @@ ext4fs_inode_256_read
   return inode_256;
 }
 
-uint16_t ext4fs_inode_size (const struct ext4fs_super_block *sb)
+int
+ext4fs_inode_size
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint64_t *dest)
 {
-  return le16toh(sb->sb_inode_size);
+  if (! sb) {
+    fprintf(stderr, "ext4fs_inode_uid: NULL super block\n");
+    return -1;
+  }
+  if (! inode) {
+    fprintf(stderr, "ext4fs_inode_uid: NULL inode\n");
+    return -1;
+  }
+  if (! dest) {
+    fprintf(stderr, "ext4fs_inode_uid: NULL dest\n");
+    return -1;
+  }
+  *dest = le16toh(inode->i_uid_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(inode->i_uid_hi) << 16;
+  return 0;
 }
 
 int
@@ -606,6 +618,7 @@ int ext4fs_inspect (const char *dev, int fd)
   uint32_t inode_number = 0;
   struct ext4fs_inode_256 inode_256 = {0};
   struct ext4fs_super_block sb = {0};
+  uint16_t                  sb_inode_size;
   uint64_t size = 0;
   if (ext4fs_size(dev, fd, &size) ||
       ! size)
@@ -635,7 +648,9 @@ int ext4fs_inspect (const char *dev, int fd)
     i++;
   }
   inode_number = 2;
-  if (ext4fs_inode_size(&sb) == 256) {
+  if (ext4fs_sb_inode_size(&sb, &sb_inode_size))
+    return -1;
+  if (sb_inode_size == 256) {
     if (! ext4fs_inode_256_read(&sb, bgd, &inode_256, inode_number, fd)) {
       fprintf(stderr, "ext4fs_inspect: ext4fs_inode_256_read\n");
       return -1;
@@ -653,18 +668,18 @@ int ext4fs_inspect (const char *dev, int fd)
 int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
                               const struct ext4fs_inode_256 *inode_256)
 {
+  uint16_t mode;
+  uint64_t size;
   uint32_t uid;
-  if (! sb || ! inode_256) {
-    fprintf(stderr, "ext4fs_inspect_inode_256: invalid argument\n");
+  if (! sb || ! inode_256)
     return -1;
-  }
-  if (ext4fs_inode_uid(sb, &inode_256->inode, &uid)) {
-    fprintf(stderr, "ext4fs_inspect_inode_256: ext4fs_inode_uid\n");
+  mode = le16toh(inode_256->inode.i_mode);
+  if (ext4fs_inode_uid(sb, &inode_256->inode, &uid) ||
+      ext4fs_inode_size(sb, &inode_256->inode, &size))
     return -1;
-  }
   printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\n"
          "                 i_uid: (U32) %u}\n",
-         le16toh(inode_256->inode.i_mode),
+         mode,
          uid);
   return 0;
 }
@@ -1213,6 +1228,15 @@ int ext4fs_sb_free_blocks_count (const struct ext4fs_super_block *sb,
   *dest = le32toh(sb->sb_free_blocks_count_lo);
   if (ext4fs_64bit(sb))
     *dest |= (uint64_t) le32toh(sb->sb_free_blocks_count_hi) << 32;
+  return 0;
+}
+
+int ext4fs_sb_inode_size (const struct ext4fs_super_block *sb,
+                          uint16_t *dest)
+{
+  assert(sb);
+  assert(dest);
+  *dest = le16toh(sb->sb_inode_size);
   return 0;
 }
 

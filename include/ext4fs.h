@@ -454,7 +454,11 @@ ext4fs_inode_256_read
  uint32_t inode_number,
  int fd);
 
-uint16_t ext4fs_inode_size (const struct ext4fs_super_block *sb);
+int
+ext4fs_inode_size
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint64_t *dest);
 
 int
 ext4fs_inode_uid
@@ -512,14 +516,17 @@ int ext4fs_sb_first_error_time (const struct ext4fs_super_block *sb,
 int ext4fs_sb_free_blocks_count (const struct ext4fs_super_block *sb,
                                  uint64_t *dest);
 
+int ext4fs_sb_inode_size (const struct ext4fs_super_block *sb,
+                          uint16_t *dest);
+
 int ext4fs_sb_mount_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest);
+                          uint64_t *dest);
 
 int ext4fs_sb_newfs_time (const struct ext4fs_super_block *sb,
-                       uint64_t *dest);
+                          uint64_t *dest);
 
 int ext4fs_sb_reserved_blocks_count (const struct ext4fs_super_block *sb,
-                                  uint64_t *dest);
+                                     uint64_t *dest);
 
 int ext4fs_sb_write_time (const struct ext4fs_super_block *sb,
                           uint64_t *dest);
