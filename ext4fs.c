@@ -27,10 +27,11 @@
 #include <endian.h>
 #include <err.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <ext4fs.h>
@@ -475,6 +476,21 @@ ext4fs_inode_256_read
 }
 
 int
+ext4fs_inode_blocks
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint64_t *dest)
+{
+  assert(sb);
+  assert(inode);
+  assert(dest);
+  *dest = le32toh(inode->i_blocks_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) le16toh(inode->i_blocks_hi) << 32;
+  return 0;
+}
+
+int
 ext4fs_inode_gid
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_inode *inode,
@@ -500,7 +516,7 @@ ext4fs_inode_size
   assert(dest);
   *dest = le32toh(inode->i_size_lo);
   if (ext4fs_64bit(sb))
-    *dest |= (uint64_t) le32toh(inode->i_size_hi) << 16;
+    *dest |= (uint64_t) le32toh(inode->i_size_hi) << 32;
   return 0;
 }
 
@@ -579,13 +595,15 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
                               const struct ext4fs_inode_256 *inode_256)
 {
   uint32_t atime;
-  char     atime_str[32];
+  char     atime_str[32] = {0};
+  uint64_t blocks;
   uint32_t ctime;
-  char     ctime_str[32];
+  char     ctime_str[32] = {0};
+  char     mode_str[14] = {0};
   uint32_t mtime;
-  char     mtime_str[32];
+  char     mtime_str[32] = {0};
   uint32_t dtime;
-  char     dtime_str[32];
+  char     dtime_str[32] = {0};
   uint32_t gid;
   uint16_t mode;
   uint64_t size;
@@ -597,15 +615,17 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
   ctime = le32toh(inode_256->inode.i_ctime);
   mtime = le32toh(inode_256->inode.i_mtime);
   dtime = le32toh(inode_256->inode.i_dtime);
-  if (ext4fs_inode_uid(sb, &inode_256->inode, &uid) ||
+  if (ext4fs_mode_to_str(mode, mode_str, sizeof(mode_str)) ||
+      ext4fs_inode_uid(sb, &inode_256->inode, &uid) ||
       ext4fs_inode_size(sb, &inode_256->inode, &size) ||
       ext4fs_time_to_str(atime, atime_str, sizeof(atime_str)) ||
       ext4fs_time_to_str(ctime, ctime_str, sizeof(ctime_str)) ||
       ext4fs_time_to_str(mtime, mtime_str, sizeof(mtime_str)) ||
       ext4fs_time_to_str(dtime, dtime_str, sizeof(dtime_str)) ||
-      ext4fs_inode_gid(sb, &inode_256->inode, &gid))
+      ext4fs_inode_gid(sb, &inode_256->inode, &gid) ||
+      ext4fs_inode_blocks(sb, &inode_256->inode, &blocks))
     return -1;
-  printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\n"
+  printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\t# %s\n"
          "                 i_uid: (U32) %u,\n"
          "                 i_size: (U64) " CONFIGURE_FMT_UINT64 ",\n"
          "                 i_atime: %%Time{tv_sec: %u,\t# %s\n"
@@ -616,16 +636,54 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
          "                                tv_nsec: %u},\n"
          "                 i_dtime: (U32) %u,\t# %s\n"
          "                 i_gid: (U32) %u,\n"
+         "                 i_links_count: (U16) %u,\n"
+         "                 i_blocks: (U64) " CONFIGURE_FMT_UINT64 ",\n"
          "                 }\n",
-         mode,
+         mode, mode_str,
          uid,
          size,
          atime, atime_str, le32toh(inode_256->inode.i_atime_extra),
          ctime, ctime_str, le32toh(inode_256->inode.i_ctime_extra),
          mtime, mtime_str, le32toh(inode_256->inode.i_mtime_extra),
          dtime, dtime_str,
-         gid);
+         gid,
+         le16toh(inode_256->inode.i_links_count),
+         blocks);
 
+  return 0;
+}
+
+int ext4fs_mode_to_str (uint16_t mode, char *dest, size_t size)
+{
+  if (size < 14)
+    return -1;
+  memset(dest, 0, 14);
+  if (S_ISREG(mode))
+    dest[0] = '-';
+  else if (S_ISDIR(mode))
+    dest[0] = 'd';
+  else if (S_ISLNK(mode))
+    dest[0] = 'l';
+  else if (S_ISCHR(mode))
+    dest[0] = 'c';
+  else if (S_ISBLK(mode))
+    dest[0] = 'b';
+  else if (S_ISFIFO(mode))
+    dest[0] = 'f';
+  else if (S_ISSOCK(mode))
+    dest[0] = 's';
+  dest[1]  = (S_ISUID & mode) ? 'U' : '-';
+  dest[2]  = (S_ISGID & mode) ? 'G' : '-';
+  dest[3]  = (S_ISVTX & mode) ? 'v' : '-';
+  dest[4]  = (S_IRUSR & mode) ? 'r' : '-';
+  dest[5]  = (S_IWUSR & mode) ? 'w' : '-';
+  dest[6]  = (S_IXUSR & mode) ? 'x' : '-';
+  dest[7]  = (S_IRGRP & mode) ? 'r' : '-';
+  dest[8]  = (S_IWGRP & mode) ? 'w' : '-';
+  dest[9]  = (S_IXGRP & mode) ? 'x' : '-';
+  dest[10] = (S_IROTH & mode) ? 'r' : '-';
+  dest[11] = (S_IWOTH & mode) ? 'w' : '-';
+  dest[12] = (S_IXOTH & mode) ? 'x' : '-';
   return 0;
 }
 
@@ -782,12 +840,12 @@ int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb)
   uint64_t mount_time;
   uint64_t newfs_time;
   uint64_t reserved_blocks_count;
-  char str_check_time[32];
-  char str_mount_time[32];
-  char str_write_time[32];
-  char str_newfs_time[32];
-  char str_first_error_time[32];
-  char str_last_error_time[32];
+  char str_check_time[32] = {0};
+  char str_mount_time[32] = {0};
+  char str_write_time[32] = {0};
+  char str_newfs_time[32] = {0};
+  char str_first_error_time[32] = {0};
+  char str_last_error_time[32] = {0};
   char volume_name[EXT4FS_VOLUME_NAME_MAX + 1] = {0};
   uint64_t write_time;
   assert(sb);

@@ -497,6 +497,8 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 
+int ext4fs_mode_to_str (uint16_t mode, char *dest, size_t size);
+
 uint64_t
 ext4fs_sb_block_group_count
 (const struct ext4fs_super_block *sb);
