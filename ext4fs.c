@@ -475,6 +475,21 @@ ext4fs_inode_256_read
 }
 
 int
+ext4fs_inode_gid
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint32_t *dest)
+{
+  assert(sb);
+  assert(inode);
+  assert(dest);
+  *dest = le16toh(inode->i_gid_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(inode->i_gid_hi) << 16;
+  return 0;
+}
+
+int
 ext4fs_inode_size
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_inode *inode,
@@ -565,6 +580,13 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
 {
   uint32_t atime;
   char     atime_str[32];
+  uint32_t ctime;
+  char     ctime_str[32];
+  uint32_t mtime;
+  char     mtime_str[32];
+  uint32_t dtime;
+  char     dtime_str[32];
+  uint32_t gid;
   uint16_t mode;
   uint64_t size;
   uint32_t uid;
@@ -572,20 +594,38 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
   assert(inode_256);
   mode = le16toh(inode_256->inode.i_mode);
   atime = le32toh(inode_256->inode.i_atime);
+  ctime = le32toh(inode_256->inode.i_ctime);
+  mtime = le32toh(inode_256->inode.i_mtime);
+  dtime = le32toh(inode_256->inode.i_dtime);
   if (ext4fs_inode_uid(sb, &inode_256->inode, &uid) ||
       ext4fs_inode_size(sb, &inode_256->inode, &size) ||
-      ext4fs_time_to_str(atime, atime_str, sizeof(atime_str)))
+      ext4fs_time_to_str(atime, atime_str, sizeof(atime_str)) ||
+      ext4fs_time_to_str(ctime, ctime_str, sizeof(ctime_str)) ||
+      ext4fs_time_to_str(mtime, mtime_str, sizeof(mtime_str)) ||
+      ext4fs_time_to_str(dtime, dtime_str, sizeof(dtime_str)) ||
+      ext4fs_inode_gid(sb, &inode_256->inode, &gid))
     return -1;
   printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\n"
          "                 i_uid: (U32) %u,\n"
          "                 i_size: (U64) " CONFIGURE_FMT_UINT64 ",\n"
          "                 i_atime: %%Time{tv_sec: %u,\t# %s\n"
-         "                                tv_nsec: %u}}\n",
+         "                                tv_nsec: %u},\n"
+         "                 i_ctime: %%Time{tv_sec: %u,\t# %s\n"
+         "                                tv_nsec: %u},\n"
+         "                 i_mtime: %%Time{tv_sec: %u,\t# %s\n"
+         "                                tv_nsec: %u},\n"
+         "                 i_dtime: (U32) %u,\t# %s\n"
+         "                 i_gid: (U32) %u,\n"
+         "                 }\n",
          mode,
          uid,
          size,
-         atime, atime_str,
-         le32toh(inode_256->inode.i_atime_extra));
+         atime, atime_str, le32toh(inode_256->inode.i_atime_extra),
+         ctime, ctime_str, le32toh(inode_256->inode.i_ctime_extra),
+         mtime, mtime_str, le32toh(inode_256->inode.i_mtime_extra),
+         dtime, dtime_str,
+         gid);
+
   return 0;
 }
 

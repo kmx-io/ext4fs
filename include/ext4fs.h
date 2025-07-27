@@ -455,6 +455,12 @@ ext4fs_inode_256_read
  int fd);
 
 int
+ext4fs_inode_gid
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint32_t *dest);
+
+int
 ext4fs_inode_size
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_inode *inode,
