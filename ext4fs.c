@@ -500,58 +500,78 @@ ext4fs_disklabel_get (struct disklabel *dl, int fd)
 
 #endif /* OpenBSD */
 
-struct ext4fs_inode *
-ext4fs_inode_read
+struct ext4fs_inode_256 *
+ext4fs_inode_256_read
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd_table,
- struct ext4fs_inode *inode, 
+ struct ext4fs_inode_256 *inode_256, 
  uint32_t inode_number,
  int fd)
 {
   uint32_t block_group;
   uint32_t block_size;
-  uint64_t inode_table_block;
   uint32_t inode_index;
   uint64_t inode_offset;
+  uint16_t inode_size;
+  uint64_t inode_table_block;
   ssize_t done;
   ssize_t r;
   ssize_t remaining;
-  if (! inode || ! sb || ! bgd_table) {
-    fprintf(stderr, "ext4fs_inode_read: NULL parameter\n");
+  if (! inode_256 || ! sb || ! bgd_table) {
+    fprintf(stderr, "ext4fs_inode_256_read: NULL parameter\n");
     return NULL;
   }
   if (inode_number < 1) {
-    fprintf(stderr, "ext4fs_inode_read: invalid inode number %u\n", inode_number);
+    fprintf(stderr, "ext4fs_inode_256_read: invalid inode number %u\n",
+            inode_number);
     return NULL;
   }
   block_group = (inode_number - 1) / le32toh(sb->sb_inodes_per_group);
   inode_index = (inode_number - 1) % le32toh(sb->sb_inodes_per_group);
-  if (ext4fs_sb_block_size(sb, &block_size)) {
-    fprintf(stderr, "ext4fs_inode_read: ext4fs_sb_block_size\n");
+  if (block_group >= ext4fs_sb_block_group_count(sb)) {
+    fprintf(stderr, "ext4fs_inode_256_read: block group %u out of range\n",
+            block_group);
     return NULL;
   }
-  if (ext4fs_bgd_inode_table_block(sb, &bgd_table[block_group], &inode_table_block)) {
-    fprintf(stderr, "ext4fs_inode_read: ext4fs_bgd_inode_table_block\n");
+  if (ext4fs_sb_block_size(sb, &block_size)) {
+    fprintf(stderr, "ext4fs_inode_256_read: ext4fs_sb_block_size\n");
+    return NULL;
+  }
+  if (ext4fs_bgd_inode_table_block(sb, &bgd_table[block_group],
+                                   &inode_table_block)) {
+    fprintf(stderr,
+            "ext4fs_inode_256_read: ext4fs_bgd_inode_table_block\n");
     return NULL;
   }
   inode_offset = inode_table_block * block_size + 
                  inode_index * le16toh(sb->sb_inode_size);
   if (lseek(fd, inode_offset, SEEK_SET) < 0) {
-    warn("ext4fs_inode_read: lseek %lu", inode_offset);
+    warn("ext4fs_inode_256_read: lseek %lu", inode_offset);
+    return NULL;
+  }
+  inode_size = ext4fs_inode_size(sb);
+  if (sizeof(struct ext4fs_inode_256) != inode_size) {
+    fprintf(stderr, "ext4fs_inode_256_read: invalid inode size: %u",
+            inode_size);
     return NULL;
   }
   done = 0;
-  remaining = sizeof(struct ext4fs_inode);
+  remaining = sizeof(struct ext4fs_inode_256);
   while (remaining > 0) {
-    r = read(fd, (char *) inode + done, remaining);
+    r = read(fd, (char *) inode_256 + done, remaining);
     if (r < 0) {
-      warn("ext4fs_inode_read: read inode %ld", remaining);
+      warn("ext4fs_inode_256_read: read inode %ld", remaining);
       return NULL;
     }
     done += r;
     remaining -= r;
   }
-  return inode;
+  return inode_256;
+}
+
+uint16_t ext4fs_inode_size (const struct ext4fs_super_block *sb)
+{
+  return le16toh(sb->sb_inode_size);
 }
 
 int
@@ -584,7 +604,7 @@ int ext4fs_inspect (const char *dev, int fd)
   uint64_t                              bgd_count = 0;
   uint64_t i;
   uint32_t inode_number = 0;
-  struct ext4fs_inode inode = {0};
+  struct ext4fs_inode_256 inode_256 = {0};
   struct ext4fs_super_block sb = {0};
   uint64_t size = 0;
   if (ext4fs_size(dev, fd, &size) ||
@@ -614,35 +634,37 @@ int ext4fs_inspect (const char *dev, int fd)
     }
     i++;
   }
-  inode_number = 5;
-  if (! ext4fs_inode_read(&sb, bgd, &inode, inode_number, fd)) { 
-    fprintf(stderr, "ext4fs_inspect: ext4fs_inode_read\n");
-    return -1;
-  }
-  printf("# %u\n", inode_number);
-  if (ext4fs_inspect_inode(&sb, &inode)) {
-    fprintf(stderr, "ext4fs_inspect: ext4fs_inspect_inode\n");
-    return -1;
+  inode_number = 2;
+  if (ext4fs_inode_size(&sb) == 256) {
+    if (! ext4fs_inode_256_read(&sb, bgd, &inode_256, inode_number, fd)) {
+      fprintf(stderr, "ext4fs_inspect: ext4fs_inode_256_read\n");
+      return -1;
+    }
+    printf("# %u\n", inode_number);
+    if (ext4fs_inspect_inode_256(&sb, &inode_256)) {
+      fprintf(stderr, "ext4fs_inspect: ext4fs_inspect_inode_256\n");
+      return -1;
+    }
   }
   printf("EOF\n");
   return 0;
 }
 
-int ext4fs_inspect_inode (const struct ext4fs_super_block *sb,
-                          const struct ext4fs_inode *inode)
+int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
+                              const struct ext4fs_inode_256 *inode_256)
 {
   uint32_t uid;
-  if (! inode) {
-    fprintf(stderr, "ext4fs_inspect_inode: invalid argument\n");
+  if (! sb || ! inode_256) {
+    fprintf(stderr, "ext4fs_inspect_inode_256: invalid argument\n");
     return -1;
   }
-  if (ext4fs_inode_uid(sb, inode, &uid)) {
-    fprintf(stderr, "ext4fs_inspect_inode: ext4fs_inode_uid\n");
+  if (ext4fs_inode_uid(sb, &inode_256->inode, &uid)) {
+    fprintf(stderr, "ext4fs_inspect_inode_256: ext4fs_inode_uid\n");
     return -1;
   }
-  printf("%%Ext4fs.Inode{i_mode: (U16) %u,\n"
-         "              i_uid: (U32) %u}\n",
-         le16toh(inode->i_mode),
+  printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\n"
+         "                 i_uid: (U32) %u}\n",
+         le16toh(inode_256->inode.i_mode),
          uid);
   return 0;
 }

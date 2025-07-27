@@ -323,46 +323,47 @@ struct ext4fs_inode {
   uint16_t i_mode;
   uint16_t i_uid_lo;
   uint32_t i_size_lo;
-  uint32_t i_atime_lo;
-  uint32_t i_ctime_lo;
-  uint32_t i_mtime_lo;
+  uint32_t i_atime;
+  uint32_t i_ctime;
+  // 0x10
+  uint32_t i_mtime;
   uint32_t i_dtime;
   uint16_t i_gid_lo;
   uint16_t i_links_count;
   uint32_t i_blocks_lo;
+  // 0x20
   uint32_t i_flags;
-  uint32_t i_os_dependent_1;
-  union {
-    struct {
-      uint32_t i_block[15];
-    };
-    struct {
-      struct ext4fs_extent_header i_extents; // EXT4FS_INODE_FLAGS_EXTENTS
-    };
-  };
-  uint32_t i_version_lo;
-  uint32_t i_file_acl_lo;
+  uint32_t i_version;
+  uint32_t i_block[15];
+  uint32_t i_nfs_generation;
+  uint32_t i_extended_attributes_lo;
   uint32_t i_size_hi;
-  uint32_t i_padding;
-  union {
-    struct {
-      uint16_t i_blocks_hi;
-      uint16_t i_file_acl_hi;
-      uint16_t i_uid_hi;
-      uint16_t i_gid_hi;
-    };
-    uint16_t i_checksum_lo;
-  };
+  // 0x70
+  uint32_t i_fragment_address;
+  uint16_t i_blocks_hi;
+  uint16_t i_extended_attributes_hi;
+  uint16_t i_uid_hi;
+  uint16_t i_gid_hi;
+  uint16_t i_checksum_lo;
+  uint16_t i_reserved_7e;
+  // 0x80
   uint16_t i_extra_isize;
   uint16_t i_checksum_hi;
-  uint32_t i_ctime_hi;
-  uint32_t i_mtime_hi;
-  uint32_t i_atime_hi;
-  uint32_t i_crtime_lo;
-  uint32_t i_crtime_hi;
+  uint32_t i_ctime_extra;
+  uint32_t i_mtime_extra;
+  uint32_t i_atime_extra;
+  // 0x90
+  uint32_t i_crtime;
+  uint32_t i_crtime_extra;
   uint32_t i_version_hi;
   uint32_t i_project_id;
+  // 0xA0
 } __attribute__((packed));
+
+struct ext4fs_inode_256 {
+  struct ext4fs_inode inode;
+  uint8_t extended_attributes[256 - sizeof(struct ext4fs_inode)];
+};
 
 int
 ext4fs_bgd_block_bitmap_block
@@ -445,13 +446,15 @@ ext4fs_block_group_descriptor_read
  uint64_t bgd_count,
  int fd);
 
-struct ext4fs_inode *
-ext4fs_inode_read
+struct ext4fs_inode_256 *
+ext4fs_inode_256_read
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd,
- struct ext4fs_inode *inode, 
+ struct ext4fs_inode_256 *inode, 
  uint32_t inode_number,
  int fd);
+
+uint16_t ext4fs_inode_size (const struct ext4fs_super_block *sb);
 
 int
 ext4fs_inode_uid
@@ -479,8 +482,8 @@ void ext4fs_inspect_errors (uint16_t errors);
 int ext4fs_inspect_flags_names (uint32_t flags,
                                 const s_value_name *names);
 
-int ext4fs_inspect_inode (const struct ext4fs_super_block *sb,
-                          const struct ext4fs_inode *inode);
+int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
+                              const struct ext4fs_inode_256 *inode);
 
 int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
 

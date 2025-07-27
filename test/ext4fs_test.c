@@ -249,6 +249,18 @@ void test_bgd (void)
   TEST_EQ(bgd_checksum, 0x7E71U);
 }
 
+void test_inode (void)
+{
+  TEST_EQ(offsetof(struct ext4fs_inode, i_mode), 0);
+  TEST_EQ(offsetof(struct ext4fs_inode, i_mtime), 0x10);
+  TEST_EQ(offsetof(struct ext4fs_inode, i_flags), 0x20);
+  TEST_EQ(offsetof(struct ext4fs_inode, i_nfs_generation), 0x64);
+  TEST_EQ(offsetof(struct ext4fs_inode, i_fragment_address), 0x70);
+  TEST_EQ(offsetof(struct ext4fs_inode, i_extra_isize), 0x80);
+  TEST_EQ(sizeof(struct ext4fs_inode), 0xA0);
+  TEST_EQ(sizeof(struct ext4fs_inode_256), 256);
+}
+
 void test_sb (void)
 {
   struct ext4fs_super_block sb = {0};
@@ -289,6 +301,7 @@ int main (int argc, char **argv)
   TEST_CASE_RUN(crc32c);
   TEST_CASE_RUN(sb);
   TEST_CASE_RUN(bgd);
+  TEST_CASE_RUN(inode);
   test_summary();
   return g_test_ko ? 1 : 0;
 }
