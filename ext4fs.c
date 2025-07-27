@@ -483,9 +483,9 @@ ext4fs_inode_size
   assert(sb);
   assert(inode);
   assert(dest);
-  *dest = le16toh(inode->i_uid_lo);
+  *dest = le32toh(inode->i_size_lo);
   if (ext4fs_64bit(sb))
-    *dest |= (uint32_t) le16toh(inode->i_uid_hi) << 16;
+    *dest |= (uint64_t) le32toh(inode->i_size_hi) << 16;
   return 0;
 }
 
@@ -563,19 +563,29 @@ int ext4fs_inspect (const char *dev, int fd)
 int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
                               const struct ext4fs_inode_256 *inode_256)
 {
+  uint32_t atime;
+  char     atime_str[32];
   uint16_t mode;
   uint64_t size;
   uint32_t uid;
   assert(sb);
   assert(inode_256);
   mode = le16toh(inode_256->inode.i_mode);
+  atime = le32toh(inode_256->inode.i_atime);
   if (ext4fs_inode_uid(sb, &inode_256->inode, &uid) ||
-      ext4fs_inode_size(sb, &inode_256->inode, &size))
+      ext4fs_inode_size(sb, &inode_256->inode, &size) ||
+      ext4fs_time_to_str(atime, atime_str, sizeof(atime_str)))
     return -1;
   printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\n"
-         "                 i_uid: (U32) %u}\n",
+         "                 i_uid: (U32) %u,\n"
+         "                 i_size: (U64) " CONFIGURE_FMT_UINT64 ",\n"
+         "                 i_atime: %%Time{tv_sec: %u,\t# %s\n"
+         "                                tv_nsec: %u}}\n",
          mode,
-         uid);
+         uid,
+         size,
+         atime, atime_str,
+         le32toh(inode_256->inode.i_atime_extra));
   return 0;
 }
 
