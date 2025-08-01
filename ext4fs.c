@@ -705,6 +705,8 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
   uint64_t blocks;
   uint32_t checksum;
   uint32_t checksum_computed;
+  uint32_t crtime;
+  char     crtime_str[32] = {0};
   uint32_t ctime;
   char     ctime_str[32] = {0};
   struct ext4fs_extent_header eh = {0};
@@ -727,6 +729,7 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
   ctime = le32toh(inode_256->inode.i_ctime);
   mtime = le32toh(inode_256->inode.i_mtime);
   dtime = le32toh(inode_256->inode.i_dtime);
+  crtime = le32toh(inode_256->inode.i_crtime);
   if (ext4fs_mode_to_str(mode, mode_str, sizeof(mode_str)) ||
       ext4fs_inode_uid(sb, &inode_256->inode, &uid) ||
       ext4fs_inode_size(sb, &inode_256->inode, &size) ||
@@ -740,7 +743,8 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
                                        &extended_attributes) ||
       ext4fs_inode_checksum(sb, &inode_256->inode, &checksum) ||
       ext4fs_inode_256_checksum_compute(sb, inode_256, inode_number,
-                                        &checksum_computed))
+                                        &checksum_computed) ||
+      ext4fs_time_to_str(crtime, crtime_str, sizeof(crtime_str)))
     return -1;
   printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\t# %s\n"
          "                 i_uid: (U32) %u,\n"
@@ -796,12 +800,16 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
          "                 i_fragment_address: (U32) %u,\n"
          "                 i_checksum: (U32) 0x%08X, # 0x%08X\n"
          "                 i_extra_isize: (U16) %u,\n"
+         "                 i_crtime: %%Time{tv_sec: %u,\t# %s\n"
+         "                                 tv_nsec: %u},\n"
          "                 i_project_id: (U32) %u}",
          le32toh(inode_256->inode.i_nfs_generation),
          extended_attributes,
          le32toh(inode_256->inode.i_fragment_address),
          checksum, checksum_computed,
          le16toh(inode_256->inode.i_extra_isize),
+         crtime, crtime_str,
+         le32toh(inode_256->inode.i_crtime_extra),
          le32toh(inode_256->inode.i_project_id));
   return 0;
 }
