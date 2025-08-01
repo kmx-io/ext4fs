@@ -113,6 +113,36 @@ extern const s_value_name ext4fs_flag_names[];
 #define EXT4FS_INODE_JOURNAL       8
 #define EXT4FS_INODE_FIRST        11
 
+extern const char *ext4fs_inode_names[];
+
+#define EXTFS_INODE_FLAG_SECURE_RM                  0x00000001
+#define EXTFS_INODE_FLAG_UN_RM                      0x00000002
+#define EXTFS_INODE_FLAG_COMPRESSION                0x00000004
+#define EXTFS_INODE_FLAG_SYNC                       0x00000008
+#define EXTFS_INODE_FLAG_IMMUTABLE                  0x00000010
+#define EXTFS_INODE_FLAG_APPEND                     0x00000020
+#define EXTFS_INODE_FLAG_NO_DUMP                    0x00000040
+#define EXTFS_INODE_FLAG_NO_ATIME                   0x00000080
+#define EXTFS_INODE_FLAG_DIRTY                      0x00000100
+#define EXTFS_INODE_FLAG_COMPRESSED_BLOCKS          0x00000200
+#define EXTFS_INODE_FLAG_NO_COMPRESSION             0x00000400
+#define EXTFS_INODE_FLAG_ENCRYPTED                  0x00000800
+#define EXTFS_INODE_FLAG_INDEX                      0x00001000
+#define EXTFS_INODE_FLAG_IMAGIC                     0x00002000
+#define EXTFS_INODE_FLAG_JOURNAL_DATA               0x00004000
+#define EXTFS_INODE_FLAG_NO_TAIL                    0x00008000
+#define EXTFS_INODE_FLAG_DIR_SYNC                   0x00010000
+#define EXTFS_INODE_FLAG_TOP_DIR                    0x00020000
+#define EXTFS_INODE_FLAG_HUGE_FILE                  0x00040000
+#define EXTFS_INODE_FLAG_EXTENTS                    0x00080000
+#define EXTFS_INODE_FLAG_EXTENDED_ATTRIBUTES_INODE  0x00200000
+#define EXTFS_INODE_FLAG_EOF_BLOCKS                 0x00400000
+#define EXTFS_INODE_FLAG_INLINE_DATA                0x10000000
+#define EXTFS_INODE_FLAG_PROJECT_ID_INHERITANCE     0x20000000
+#define EXTFS_INODE_FLAG_CASEFOLD                   0x40000000
+
+extern const s_value_name ext4fs_inode_flag_names[];
+
 #define EXT4FS_MOUNT_READONLY              0x0001
 #define EXT4FS_MOUNT_NO_ATIME              0x0002
 #define EXT4FS_MOUNT_DIRSYNC               0x0004
@@ -317,7 +347,21 @@ struct ext4fs_extent_header {
   uint16_t eh_max;
   uint16_t eh_depth;
   uint32_t eh_generation;
-};
+} __attribute__((packed));
+
+struct ext4fs_extent {
+  uint32_t e_block;
+  uint16_t e_len;
+  uint16_t e_start_hi;
+  uint32_t e_start_lo;
+} __attribute__((packed));
+
+struct ext4fs_extent_idx {
+  uint32_t ei_block;
+  uint32_t ei_leaf_lo;
+  uint16_t ei_leaf_hi;
+  uint16_t ei_unused;
+} __attribute__((packed));
 
 struct ext4fs_inode {
   uint16_t i_mode;
@@ -334,7 +378,16 @@ struct ext4fs_inode {
   // 0x20
   uint32_t i_flags;
   uint32_t i_version;
-  uint32_t i_block[15];
+  union {
+    uint32_t i_block[15];
+    struct {
+      struct ext4fs_extent_header i_extent_header;
+      union {
+        struct ext4fs_extent i_extent[4];
+        struct ext4fs_extent_idx i_extent_idx[4];
+      };
+    };
+  };
   uint32_t i_nfs_generation;
   uint32_t i_extended_attributes_lo;
   uint32_t i_size_hi;
@@ -446,6 +499,17 @@ ext4fs_block_group_descriptor_read
  uint64_t bgd_count,
  int fd);
 
+int ext4fs_extent_start
+(const struct ext4fs_extent *extent,
+ uint64_t *start);
+
+int
+ext4fs_inode_256_checksum_compute
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode_256 *inode,
+ uint32_t inode_number,
+ uint32_t *dest);
+
 struct ext4fs_inode_256 *
 ext4fs_inode_256_read
 (const struct ext4fs_super_block *sb,
@@ -453,6 +517,18 @@ ext4fs_inode_256_read
  struct ext4fs_inode_256 *inode, 
  uint32_t inode_number,
  int fd);
+
+int
+ext4fs_inode_blocks
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint64_t *dest);
+
+int
+ext4fs_inode_extended_attributes
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint64_t *dest);
 
 int
 ext4fs_inode_gid
@@ -472,7 +548,10 @@ ext4fs_inode_uid
  const struct ext4fs_inode *inode,
  uint32_t *dest);
 
-int ext4fs_inspect (const char *dev, int fd);
+int
+ext4fs_inspect
+(const char *dev,
+ int fd);
 
 int
 ext4fs_inspect_block_group_descriptor
@@ -485,66 +564,124 @@ ext4fs_inspect_block_group_descriptor_hex
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_block_group_descriptor *bgd);
 
-void ext4fs_inspect_creator_os (uint16_t creator_os);
+void
+ext4fs_inspect_creator_os
+(uint16_t creator_os);
 
-void ext4fs_inspect_errors (uint16_t errors);
+void
+ext4fs_inspect_errors
+(uint16_t errors);
 
-int ext4fs_inspect_flags_names (uint32_t flags,
-                                const s_value_name *names);
+int
+ext4fs_inspect_extent
+(const struct ext4fs_extent *extent,
+ uint8_t indent);
 
-int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
-                              const struct ext4fs_inode_256 *inode);
+int
+ext4fs_inspect_extent_header
+(const struct ext4fs_extent_header *eh,
+ uint8_t indent);
 
-int ext4fs_inspect_super_block (const struct ext4fs_super_block *sb);
+int
+ext4fs_inspect_flag_names
+(uint32_t flags,
+ const s_value_name *names);
 
-int ext4fs_mode_to_str (uint16_t mode, char *dest, size_t size);
+int
+ext4fs_inspect_inode_256
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode_256 *inode,
+ uint32_t inode_number);
+
+int
+ext4fs_inspect_super_block
+(const struct ext4fs_super_block *sb);
+
+int
+ext4fs_mode_to_str
+(uint16_t mode,
+ char *dest,
+ size_t size);
 
 uint64_t
 ext4fs_sb_block_group_count
 (const struct ext4fs_super_block *sb);
 
-int ext4fs_sb_checksum_compute (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_checksum_compute
+(const struct ext4fs_super_block *sb,
                                 uint32_t *dest);
 
-int ext4fs_sb_last_error_time (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_last_error_time
+(const struct ext4fs_super_block *sb,
                             uint64_t *dest);
 
-int ext4fs_sb_block_size (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_block_size
+(const struct ext4fs_super_block *sb,
                           uint32_t *dest);
 
-int ext4fs_sb_blocks_count (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_blocks_count
+(const struct ext4fs_super_block *sb,
                             uint64_t *dest);
 
-int ext4fs_sb_check_time (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_check_time
+(const struct ext4fs_super_block *sb,
                           uint64_t *dest);
 
-int ext4fs_sb_first_error_time (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_first_error_time
+(const struct ext4fs_super_block *sb,
                                 uint64_t *dest);
 
-int ext4fs_sb_free_blocks_count (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_free_blocks_count
+(const struct ext4fs_super_block *sb,
                                  uint64_t *dest);
 
-int ext4fs_sb_inode_size (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_inode_size
+(const struct ext4fs_super_block *sb,
                           uint16_t *dest);
 
-int ext4fs_sb_mount_time (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_mount_time
+(const struct ext4fs_super_block *sb,
                           uint64_t *dest);
 
-int ext4fs_sb_newfs_time (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_newfs_time
+(const struct ext4fs_super_block *sb,
                           uint64_t *dest);
 
-int ext4fs_sb_reserved_blocks_count (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_reserved_blocks_count
+(const struct ext4fs_super_block *sb,
                                      uint64_t *dest);
 
-int ext4fs_sb_write_time (const struct ext4fs_super_block *sb,
+int
+ext4fs_sb_write_time
+(const struct ext4fs_super_block *sb,
                           uint64_t *dest);
 
-int ext4fs_size (const char *dev, int fd, uint64_t *dest);
+int
+ext4fs_size
+(const char *dev,
+ int fd,
+ uint64_t *dest);
 
 struct ext4fs_super_block *
-ext4fs_super_block_read (struct ext4fs_super_block *sb,
+ext4fs_super_block_read
+(struct ext4fs_super_block *sb,
                          int fd);
 
-int ext4fs_time_to_str (time_t time, char *str, size_t size);
+int
+ext4fs_time_to_str
+(time_t time,
+ char *str,
+ size_t size);
 
 #endif /* EXT4FS_H */

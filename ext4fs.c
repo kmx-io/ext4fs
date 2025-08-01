@@ -127,6 +127,34 @@ const s_value_name ext4fs_flag_names[] = {
   {0, NULL}
 };
 
+const s_value_name ext4fs_inode_flag_names[] = {
+  {EXTFS_INODE_FLAG_SECURE_RM                , "secure_rm"},
+  {EXTFS_INODE_FLAG_UN_RM                    , "un_rm"},
+  {EXTFS_INODE_FLAG_COMPRESSION              , "comp"},
+  {EXTFS_INODE_FLAG_SYNC                     , "sync"},
+  {EXTFS_INODE_FLAG_IMMUTABLE                , "immutable"},
+  {EXTFS_INODE_FLAG_APPEND                   , "append"},
+  {EXTFS_INODE_FLAG_NO_DUMP                  , "no_dump"},
+  {EXTFS_INODE_FLAG_NO_ATIME                 , "no_atime"},
+  {EXTFS_INODE_FLAG_DIRTY                    , "dirty"},
+  {EXTFS_INODE_FLAG_COMPRESSED_BLOCKS        , "comp-blk"},
+  {EXTFS_INODE_FLAG_NO_COMPRESSION           , "no-comp"},
+  {EXTFS_INODE_FLAG_ENCRYPTED                , "encrypted"},
+  {EXTFS_INODE_FLAG_INDEX                    , "index"},
+  {EXTFS_INODE_FLAG_IMAGIC                   , "imagic"},
+  {EXTFS_INODE_FLAG_JOURNAL_DATA             , "journal_data"},
+  {EXTFS_INODE_FLAG_NO_TAIL                  , "no_tail"},
+  {EXTFS_INODE_FLAG_DIR_SYNC                 , "dir_sync"},
+  {EXTFS_INODE_FLAG_TOP_DIR                  , "top_dir"},
+  {EXTFS_INODE_FLAG_HUGE_FILE                , "huge_file"},
+  {EXTFS_INODE_FLAG_EXTENTS                  , "extents"},
+  {EXTFS_INODE_FLAG_EXTENDED_ATTRIBUTES_INODE, "xattrs_inode"},
+  {EXTFS_INODE_FLAG_EOF_BLOCKS               , "eof_blocks"},
+  {EXTFS_INODE_FLAG_INLINE_DATA              , "inline_data"},
+  {EXTFS_INODE_FLAG_PROJECT_ID_INHERITANCE   , "project_id_inheritance"},
+  {EXTFS_INODE_FLAG_CASEFOLD                 , "casefold"}
+};
+
 const s_value_name ext4fs_mount_names[] = {
   {EXT4FS_MOUNT_READONLY,             "ro"},
   {EXT4FS_MOUNT_NO_ATIME,             "noatime"},
@@ -406,6 +434,41 @@ ext4fs_disklabel_get (struct disklabel *dl, int fd)
 
 #endif /* OpenBSD */
 
+int
+ext4fs_inode_256_checksum_compute
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode_256 *inode_256,
+ uint32_t inode_number,
+ uint32_t *dest)
+{
+  uint32_t crc;
+  uint32_t inode_number_le;
+  uint32_t seed;
+  struct ext4fs_inode_256 tmp = {0};
+  assert(sb);
+  assert(inode_256);
+  assert(dest);
+  if (! (sb->sb_feature_ro_compat & EXT4FS_FEATURE_RO_COMPAT_METADATA_CSUM)) {
+    *dest = 0;
+    return 0;
+  }
+  if (sb->sb_feature_incompat & EXT4FS_FEATURE_INCOMPAT_CSUM_SEED)
+    seed = le32toh(sb->sb_checksum_seed);
+  else {
+    seed = crc32c(0, sb->sb_uuid, sizeof(sb->sb_uuid));
+  }
+  inode_number_le = htole32(inode_number);
+  crc = crc32c(seed, &inode_number_le, sizeof(inode_number_le));
+  crc = crc32c(crc, &inode_256->inode.i_nfs_generation,
+               sizeof(inode_256->inode.i_nfs_generation));
+  tmp = *inode_256;
+  tmp.inode.i_checksum_lo = 0;
+  tmp.inode.i_checksum_hi = 0;
+  crc = crc32c(crc, &tmp, sizeof(tmp));
+  *dest = ~crc;
+  return 0;
+}
+
 struct ext4fs_inode_256 *
 ext4fs_inode_256_read
 (const struct ext4fs_super_block *sb,
@@ -487,6 +550,35 @@ ext4fs_inode_blocks
   *dest = le32toh(inode->i_blocks_lo);
   if (ext4fs_64bit(sb))
     *dest |= (uint64_t) le16toh(inode->i_blocks_hi) << 32;
+  return 0;
+}
+
+int
+ext4fs_inode_checksum
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint32_t *dest)
+{
+  assert(sb);
+  assert(inode);
+  assert(dest);
+  *dest = le16toh(inode->i_checksum_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint32_t) le16toh(inode->i_checksum_hi) << 16;
+  return 0;
+}
+
+int
+ext4fs_inode_extended_attributes
+(const struct ext4fs_super_block *sb,
+ const struct ext4fs_inode *inode,
+ uint64_t *dest)
+{
+  assert(inode);
+  assert(dest);
+  *dest = le32toh(inode->i_extended_attributes_lo);
+  if (ext4fs_64bit(sb))
+    *dest |= (uint64_t) le16toh(inode->i_extended_attributes_hi) << 32;
   return 0;
 }
 
@@ -582,23 +674,31 @@ int ext4fs_inspect (const char *dev, int fd)
       return -1;
     }
     printf("# %u\n", inode_number);
-    if (ext4fs_inspect_inode_256(&sb, &inode_256)) {
+    if (ext4fs_inspect_inode_256(&sb, &inode_256, inode_number)) {
       fprintf(stderr, "ext4fs_inspect: ext4fs_inspect_inode_256\n");
       return -1;
     }
   }
-  printf("EOF\n");
+  printf("\n"
+         "EOF\n");
   return 0;
 }
 
 int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
-                              const struct ext4fs_inode_256 *inode_256)
+                              const struct ext4fs_inode_256 *inode_256,
+                              uint32_t inode_number)
 {
   uint32_t atime;
   char     atime_str[32] = {0};
   uint64_t blocks;
+  uint32_t checksum;
+  uint32_t checksum_computed;
   uint32_t ctime;
   char     ctime_str[32] = {0};
+  struct ext4fs_extent_header eh = {0};
+  uint64_t extended_attributes;
+  struct ext4fs_extent extent = {0};
+  int      i;
   char     mode_str[14] = {0};
   uint32_t mtime;
   char     mtime_str[32] = {0};
@@ -623,7 +723,12 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
       ext4fs_time_to_str(mtime, mtime_str, sizeof(mtime_str)) ||
       ext4fs_time_to_str(dtime, dtime_str, sizeof(dtime_str)) ||
       ext4fs_inode_gid(sb, &inode_256->inode, &gid) ||
-      ext4fs_inode_blocks(sb, &inode_256->inode, &blocks))
+      ext4fs_inode_blocks(sb, &inode_256->inode, &blocks) ||
+      ext4fs_inode_extended_attributes(sb, &inode_256->inode,
+                                       &extended_attributes) ||
+      ext4fs_inode_checksum(sb, &inode_256->inode, &checksum) ||
+      ext4fs_inode_256_checksum_compute(sb, inode_256, inode_number,
+                                        &checksum_computed))
     return -1;
   printf("%%Ext4fs.Inode256{i_mode: (U16) %u,\t# %s\n"
          "                 i_uid: (U32) %u,\n"
@@ -638,7 +743,7 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
          "                 i_gid: (U32) %u,\n"
          "                 i_links_count: (U16) %u,\n"
          "                 i_blocks: (U64) " CONFIGURE_FMT_UINT64 ",\n"
-         "                 }\n",
+         "                 i_flags: ",
          mode, mode_str,
          uid,
          size,
@@ -649,12 +754,96 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
          gid,
          le16toh(inode_256->inode.i_links_count),
          blocks);
+  if (ext4fs_inspect_flag_names(le32toh(inode_256->inode.i_flags),
+                                ext4fs_inode_flag_names))
+    return -1;
+  printf(",\n"
+         "                 i_version: (U32) %u,\n",
+         le32toh(inode_256->inode.i_version));
+  printf("                 i_extent_header:\n");
+  eh = inode_256->inode.i_extent_header;
+  ext4fs_inspect_extent_header(&eh, 2);
+  printf(",\n");
+  if (! eh.eh_depth) {
+    printf("                 i_extent: {\t# eh_depth == 0\n");
+    i = 0;
+    while (i < eh.eh_entries) {
+      printf("  # %i\n",
+             i);
+      extent = inode_256->inode.i_extent[i];
+      if (ext4fs_inspect_extent(&extent, 2))
+        return -1;
+      printf(",\n");
+      i++;
+    }
+  }
+  printf("                 },\n"
+         "                 i_nfs_generation: (U32) %u,\n"
+         "                 i_extended_attributes: (U64) "
+         CONFIGURE_FMT_UINT64 ",\n"
+         "                 i_fragment_address: (U32) %u,\n"
+         "                 i_checksum: (U32) 0x%08X} # 0x%08X",
+         le32toh(inode_256->inode.i_nfs_generation),
+         extended_attributes,
+         le32toh(inode_256->inode.i_fragment_address),
+         checksum, checksum_computed);
+  return 0;
+}
 
+int ext4fs_extent_start (const struct ext4fs_extent *extent,
+                         uint64_t *start)
+{
+  assert(extent);
+  assert(start);
+  *start = le32toh(extent->e_start_lo);
+  *start |= (uint64_t) le16toh(extent->e_start_hi) << 32;
+  return 0;
+}
+
+int ext4fs_inspect_extent (const struct ext4fs_extent *extent,
+                           uint8_t indent)
+{
+  char s[80] = {0};
+  uint64_t start;
+  assert(extent);
+  if (indent >= sizeof(s))
+    return -1;
+  memset(s, ' ', indent);
+  if (ext4fs_extent_start(extent, &start))
+    return -1;
+  printf("%s%%Ext4fs.Extent{e_block: (U32) %u,\n"
+         "%s               e_len: (U16) %u,\n"
+         "%s               e_start: (U64) " CONFIGURE_FMT_UINT64 "}",
+         s, le32toh(extent->e_block),
+         s, le16toh(extent->e_len),
+         s, start);
+  return 0;
+}
+
+int ext4fs_inspect_extent_header (const struct ext4fs_extent_header *eh,
+                                  uint8_t indent)
+{
+  char s[80] = {0};
+  assert(eh);
+  if (indent >= sizeof(s))
+    return -1;
+  memset(s, ' ', indent);
+  printf("%s%%Ext4fs.ExtentHeader{eh_magic: (U16) 0x%04X,\t# 0xF30A\n"
+         "%s                     eh_entries: (U16) %u,\n"
+         "%s                     eh_max: (U16) %u,\n"
+         "%s                     eh_depth: (U16) %u,\n"
+         "%s                     eh_generation: (U32) %u}",
+         s, le16toh(eh->eh_magic),
+         s, le16toh(eh->eh_entries),
+         s, le16toh(eh->eh_max),
+         s, le16toh(eh->eh_depth),
+         s, le32toh(eh->eh_generation));
   return 0;
 }
 
 int ext4fs_mode_to_str (uint16_t mode, char *dest, size_t size)
 {
+  assert(dest);
   if (size < 14)
     return -1;
   memset(dest, 0, 14);
@@ -1324,6 +1513,7 @@ ext4fs_super_block_read (struct ext4fs_super_block *sb,
 int ext4fs_time_to_str (time_t time, char *str, size_t size)
 {
   struct tm *local;
+  assert(str);
   if (size < 25) {
     fprintf(stderr, "time_to_str: size < 25\n");
     return -1;
