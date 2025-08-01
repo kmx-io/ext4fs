@@ -1490,9 +1490,26 @@ int ext4fs_size (const char *dev, int fd, uint64_t *dest)
   }
   *dest = DL_GETPSIZE(part) / sector_size * sector_size;
 #else
-  if (ioctl(fd, BLKGETSIZE64, dest) < 0) {
-    warn("%s: ioctl BLKGETSIZE64", dev);
+  off_t offset;
+  struct stat sb = {0};
+  if (fstat(fd, &sb)) {
+    warn("%s: fstat", dev);
     return -1;
+  }
+  if (S_ISBLK(sb.st_mode)) {
+    if (ioctl(fd, BLKGETSIZE64, dest) < 0) {
+      warn("%s: ioctl BLKGETSIZE64", dev);
+      return -1;
+    }
+    return 0;
+  }
+  if (S_ISREG(sb.st_mode)) {
+    if ((offset = lseek(fd, 0, SEEK_END)) == -1) {
+      warn("%s: lseek SEEK_END", dev);
+      return -1;
+    }
+    *dest = offset;
+    return 0;
   }
 #endif
   return 0;

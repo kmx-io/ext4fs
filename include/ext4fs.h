@@ -418,6 +418,25 @@ struct ext4fs_inode_256 {
   uint8_t extended_attributes[256 - sizeof(struct ext4fs_inode)];
 };
 
+#define EXT4FS_EXTENT_DEPTH_MAX 5
+
+struct ext4fs_extent_cursor {
+  const struct ext4fs_super_block *sb;
+  uint64_t inode_block;
+  uint32_t inode_number;
+  uint32_t inode_generation;
+  struct {
+    uint64_t physical_block;
+    struct ext4fs_extent_header hdr;
+    uint16_t idx;
+    uint64_t block_number;
+  } stack[EXT4FS_EXTENT_DEPTH_MAX + 1];
+  uint64_t block_offset;
+  short depth;
+  uint64_t offset;
+  int eof;
+};
+
 int
 ext4fs_bgd_block_bitmap_block
 (const struct ext4fs_super_block *sb,

@@ -1,25 +1,25 @@
-./inspect_ext4fs/inspect_ext4fs /dev/sdb1
+./inspect_ext4fs/inspect_ext4fs test/test.1.img
 ext4fs_size: 500170752
-%Ext4fs.SuperBlock{sb_inodes_count: (U32) 32576,
-                   sb_blocks_count: (U64) 121987,
-                   sb_reserved_blocks_count: (U64) 6099,
-                   sb_free_blocks_count: (U64) 100475,
-                   sb_free_inodes_count: (U32) 32565,
+%Ext4fs.SuperBlock{sb_inodes_count: (U32) 122112,
+                   sb_blocks_count: (U64) 122112,
+                   sb_reserved_blocks_count: (U64) 6105,
+                   sb_free_blocks_count: (U64) 110187,
+                   sb_free_inodes_count: (U32) 122101,
                    sb_first_data_block: (U32) 0,
                    sb_log_block_size: (U32) 2,  	# 4096
                    sb_log_cluster_size: (U32) 2,	# 4096
                    sb_blocks_per_group: (U32) 32768,
                    sb_clusters_per_group: (U32) 32768,
-                   sb_inodes_per_group: (U32) 8144,
-                   sb_mount_time: (U64) 1754080224,	# 2025-08-01 22:30:24 CEST
-                   sb_write_time: (U64) 1754080234,	# 2025-08-01 22:30:34 CEST
-                   sb_mount_count: (U16) 0,
+                   sb_inodes_per_group: (U32) 30528,
+                   sb_mount_time: (U64) 1754083004,	# 2025-08-01 23:16:44 CEST
+                   sb_write_time: (U64) 1754083004,	# 2025-08-01 23:16:44 CEST
+                   sb_mount_count: (U16) 1,
                    sb_max_mount_count: (S16) -1,
                    sb_magic: (U16) 0xEF53,		# 61267
                    sb_state: valid,
                    sb_errors: continue,
                    sb_revision_level_minor: (U16) 0,
-                   sb_check_time: (U64) 1754080234,	# 2025-08-01 22:30:34 CEST
+                   sb_check_time: (U64) 1754082996,	# 2025-08-01 23:16:36 CEST
                    sb_check_interval: (U32) 0,
                    sb_creator_os: (U32) 0,		# Linux
                    sb_revision_level: (U32) 1,
@@ -28,36 +28,36 @@ ext4fs_size: 500170752
                    sb_feature_compat: has_journal | ext_attr | resize_inode | dir_index,
                    sb_feature_incompat: filetype | extents | 64bit | flex_bg,
                    sb_feature_ro_compat: sparse_super | large_file | huge_file | dir_nlink | extra_isize | metadata_csum,
-                   sb_uuid: 3188b706-d0cb-421f-b961-d91363e44158,
-                   sb_volume_name: ext4fs,
+                   sb_uuid: 55bd584e-2f69-410a-bfd6-b986d77e22b4,
+                   sb_volume_name: Test 123456,
                    sb_last_mounted: ,
                    sb_algorithm_usage_bitmap: (U32) 0,
                    sb_preallocate_blocks: (U8) 0,
                    sb_preallocate_dir_blocks: (U8) 0,
-                   sb_reserved_bgdt_blocks: (U16) 1024,
+                   sb_reserved_bgdt_blocks: (U16) 59,
                    sb_journal_uuid: 00000000-0000-0000-0000-000000000000,
                    sb_journal_inode_number: (U32) 8,
                    sb_journal_device_number: (U32) 0,
                    sb_last_orphan: (U32) 0,
-                   sb_hash_seed: (U32) {0x7f93685e,
-                                        0xae4f8743,
-                                        0x02c06793,
-                                        0x558feb89},
+                   sb_hash_seed: (U32) {0x9ac5ebe0,
+                                        0x6b485576,
+                                        0x2b699d87,
+                                        0xce5bd4cd},
                    sb_default_hash_version: 1,
                    sb_journal_backup_type: 1,
                    sb_block_group_descriptor_size: (U16) 64,
                    sb_default_mount_opts: dirsync | data=journal,
                    sb_first_meta_block_group: (U32) 0,
-                   sb_newfs_time: (U64) 1751228334,	# 2025-06-29 22:18:54 CEST
-                   sb_jnl_blocks: (U32) {0x0002F30A, 0x00000004,
+                   sb_newfs_time: (U64) 1754082996,	# 2025-08-01 23:16:36 CEST
+                   sb_jnl_blocks: (U32) {0x0001F30A, 0x00000004,
                                          0x00000000, 0x00000000,
-                                         0x00003FFF, 0x000023F9,
-                                         0x00003FFF, 0x00000001,
-                                         0x000063F8, 0x00000000,
+                                         0x00001000, 0x00010000,
                                          0x00000000, 0x00000000,
                                          0x00000000, 0x00000000,
                                          0x00000000, 0x00000000,
-                                         0x04000000},
+                                         0x00000000, 0x00000000,
+                                         0x00000000, 0x00000000,
+                                         0x01000000},
                    sb_inode_size_extra_min: (U16) 32,
                    sb_inode_size_extra_want: (U16) 32,
                    sb_flags: signed_hash,
@@ -67,7 +67,7 @@ ext4fs_size: 500170752
                    sb_raid_stripe_width_block_count: (U32) 0,
                    sb_log_groups_per_flex: 4,		# 16,
                    sb_checksum_type: crc32c,
-                   sb_kilobytes_written: (U64) 319153,
+                   sb_kilobytes_written: (U64) 293,
                    sb_error_count: (U32) 0,
                    sb_first_error_time: (U64) 0,	# 1970-01-01 01:00:00 CET
                    sb_first_error_inode: (U32) 0,
@@ -82,7 +82,7 @@ ext4fs_size: 500170752
                    sb_mount_opts: "",
                    sb_user_quota_inode: (U32) 0,
                    sb_group_quota_inode: (U32) 0,
-                   sb_overhead_clusters: (U32) 0,
+                   sb_overhead_clusters: (U32) 11919,
                    sb_backup_block_groups: (U32) {0, 0},
                    sb_encrypt_algos: (U8) {0x00, 0x00, 0x00, 0x00},
                    sb_encrypt_pw_salt: (U8) {0x00, 0x00, 0x00, 0x00,
@@ -97,69 +97,69 @@ ext4fs_size: 500170752
                    sb_encoding: 0x0000,
                    sb_encoding_flags: 0x0000,
                    sb_orphan_file_inode: (U32) 0,
-                   sb_checksum: (U32) 0x38F14323} # 0x38F14323
+                   sb_checksum: (U32) 0xA780E52E} # 0xA780E52E
 ext4fs_block_group_count: 4
 # 0
-%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 1027,
-                             bgd_inode_bitmap_block: (U64) 1043,
-                             bgd_inode_table_block: (U64) 1059,
-                             bgd_free_blocks_count: (U32) 13308,
-                             bgd_free_inodes_count: (U32) 8133,
+%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 61,
+                             bgd_inode_bitmap_block: (U64) 65,
+                             bgd_inode_table_block: (U64) 69,
+                             bgd_free_blocks_count: (U32) 25061,
+                             bgd_free_inodes_count: (U32) 30517,
                              bgd_used_dirs_count: (U32) 2,
-                             bgd_flags: inode-zeroed,
+                             bgd_flags: 0x0000,
                              bgd_exclude_bitmap_block: (U64) 0,
-                             bgd_block_bitmap_checksum: (U32) 0x209015DC,
-                             bgd_inode_bitmap_checksum: (U32) 0x80723502,
-                             bgd_inode_table_unused: (U32) 8133,
-                             bgd_checksum: (U16) 0x1490} # 0x1490
+                             bgd_block_bitmap_checksum: (U32) 0x8B4154A0,
+                             bgd_inode_bitmap_checksum: (U32) 0xC6E720DD,
+                             bgd_inode_table_unused: (U32) 30517,
+                             bgd_checksum: (U16) 0x62DE} # 0x62DE
 # 1
-%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 1028,
-                             bgd_inode_bitmap_block: (U64) 1044,
-                             bgd_inode_table_block: (U64) 1568,
-                             bgd_free_blocks_count: (U32) 31742,
-                             bgd_free_inodes_count: (U32) 8144,
+%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 62,
+                             bgd_inode_bitmap_block: (U64) 66,
+                             bgd_inode_table_block: (U64) 1977,
+                             bgd_free_blocks_count: (U32) 32707,
+                             bgd_free_inodes_count: (U32) 30528,
                              bgd_used_dirs_count: (U32) 0,
-                             bgd_flags: inode-uninit | inode-zeroed,
-                             bgd_exclude_bitmap_block: (U64) 0,
-                             bgd_block_bitmap_checksum: (U32) 0x7EF1E18B,
-                             bgd_inode_bitmap_checksum: (U32) 0x00000000,
-                             bgd_inode_table_unused: (U32) 8144,
-                             bgd_checksum: (U16) 0xEF94} # 0xEF94
-# 2
-%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 1029,
-                             bgd_inode_bitmap_block: (U64) 1045,
-                             bgd_inode_table_block: (U64) 2077,
-                             bgd_free_blocks_count: (U32) 32768,
-                             bgd_free_inodes_count: (U32) 8144,
-                             bgd_used_dirs_count: (U32) 0,
-                             bgd_flags: inode-uninit | block-uninit | inode-zeroed,
+                             bgd_flags: inode-uninit | block-uninit,
                              bgd_exclude_bitmap_block: (U64) 0,
                              bgd_block_bitmap_checksum: (U32) 0x00000000,
                              bgd_inode_bitmap_checksum: (U32) 0x00000000,
-                             bgd_inode_table_unused: (U32) 8144,
-                             bgd_checksum: (U16) 0xB7A7} # 0xB7A7
-# 3
-%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 1030,
-                             bgd_inode_bitmap_block: (U64) 1046,
-                             bgd_inode_table_block: (U64) 2586,
-                             bgd_free_blocks_count: (U32) 22657,
-                             bgd_free_inodes_count: (U32) 8144,
+                             bgd_inode_table_unused: (U32) 30528,
+                             bgd_checksum: (U16) 0x81B9} # 0x81B9
+# 2
+%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 63,
+                             bgd_inode_bitmap_block: (U64) 67,
+                             bgd_inode_table_block: (U64) 3885,
+                             bgd_free_blocks_count: (U32) 28672,
+                             bgd_free_inodes_count: (U32) 30528,
                              bgd_used_dirs_count: (U32) 0,
-                             bgd_flags: inode-uninit | inode-zeroed,
+                             bgd_flags: inode-uninit,
                              bgd_exclude_bitmap_block: (U64) 0,
-                             bgd_block_bitmap_checksum: (U32) 0xB28C2D8A,
+                             bgd_block_bitmap_checksum: (U32) 0xB9C58C2E,
                              bgd_inode_bitmap_checksum: (U32) 0x00000000,
-                             bgd_inode_table_unused: (U32) 8144,
-                             bgd_checksum: (U16) 0x1E79} # 0x1E79
+                             bgd_inode_table_unused: (U32) 30528,
+                             bgd_checksum: (U16) 0x0A68} # 0x0A68
+# 3
+%Ext4fs.BlockGroupDescriptor{bgd_block_bitmap_block: (U64) 64,
+                             bgd_inode_bitmap_block: (U64) 68,
+                             bgd_inode_table_block: (U64) 5793,
+                             bgd_free_blocks_count: (U32) 23747,
+                             bgd_free_inodes_count: (U32) 30528,
+                             bgd_used_dirs_count: (U32) 0,
+                             bgd_flags: inode-uninit,
+                             bgd_exclude_bitmap_block: (U64) 0,
+                             bgd_block_bitmap_checksum: (U32) 0xBAAF5EE5,
+                             bgd_inode_bitmap_checksum: (U32) 0x00000000,
+                             bgd_inode_table_unused: (U32) 30528,
+                             bgd_checksum: (U16) 0x29D4} # 0x29D4
 # 2
 %Ext4fs.Inode256{i_mode: (U16) 16832,	# d---rwx------
                  i_uid: (U32) 1000,
                  i_size: (U64) 4096,
-                 i_atime: %Time{tv_sec: 1754080179,	# 2025-08-01 22:29:39 CEST
-                                tv_nsec: 1744058760},
-                 i_ctime: %Time{tv_sec: 1751228360,	# 2025-06-29 22:19:20 CEST
-                                tv_nsec: 3999612116},
-                 i_mtime: %Time{tv_sec: 1751228335,	# 2025-06-29 22:18:55 CEST
+                 i_atime: %Time{tv_sec: 1754082997,	# 2025-08-01 23:16:37 CEST
+                                tv_nsec: 0},
+                 i_ctime: %Time{tv_sec: 1754083004,	# 2025-08-01 23:16:44 CEST
+                                tv_nsec: 2581210960},
+                 i_mtime: %Time{tv_sec: 1754082997,	# 2025-08-01 23:16:37 CEST
                                 tv_nsec: 0},
                  i_dtime: (U32) 0,	# 1970-01-01 01:00:00 CET
                  i_gid: (U32) 1000,
@@ -177,14 +177,14 @@ ext4fs_block_group_count: 4
                    # 0
                    %Ext4fs.Extent{e_block: (U32) 0,
                                   e_len: (U16) 1,
-                                  e_start: (U64) 9203},
+                                  e_start: (U64) 7701},
                  },
                  i_nfs_generation: (U32) 0,
                  i_extended_attributes: (U64) 0,
                  i_fragment_address: (U32) 0,
-                 i_checksum: (U32) 0x39102D7B, # 0x39102D7B
+                 i_checksum: (U32) 0x03CAB6CC, # 0x03CAB6CC
                  i_extra_isize: (U16) 32,
-                 i_crtime: %Time{tv_sec: 1751228335,	# 2025-06-29 22:18:55 CEST
+                 i_crtime: %Time{tv_sec: 1754082997,	# 2025-08-01 23:16:37 CEST
                                  tv_nsec: 0},
                  i_project_id: (U32) 0}
 EOF
