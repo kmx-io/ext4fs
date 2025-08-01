@@ -435,6 +435,18 @@ ext4fs_disklabel_get (struct disklabel *dl, int fd)
 #endif /* OpenBSD */
 
 int
+ext4fs_extent_start
+(const struct ext4fs_extent *extent,
+ uint64_t *start)
+{
+  assert(extent);
+  assert(start);
+  *start = le32toh(extent->e_start_lo);
+  *start |= (uint64_t) le16toh(extent->e_start_hi) << 32;
+  return 0;
+}
+
+int
 ext4fs_inode_256_checksum_compute
 (const struct ext4fs_super_block *sb,
  const struct ext4fs_inode_256 *inode_256,
@@ -762,16 +774,16 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
          le32toh(inode_256->inode.i_version));
   printf("                 i_extent_header:\n");
   eh = inode_256->inode.i_extent_header;
-  ext4fs_inspect_extent_header(&eh, 2);
+  ext4fs_inspect_extent_header(&eh, 19);
   printf(",\n");
   if (! eh.eh_depth) {
     printf("                 i_extent: {\t# eh_depth == 0\n");
     i = 0;
     while (i < eh.eh_entries) {
-      printf("  # %i\n",
+      printf("                   # %i\n",
              i);
       extent = inode_256->inode.i_extent[i];
-      if (ext4fs_inspect_extent(&extent, 2))
+      if (ext4fs_inspect_extent(&extent, 19))
         return -1;
       printf(",\n");
       i++;
@@ -782,21 +794,15 @@ int ext4fs_inspect_inode_256 (const struct ext4fs_super_block *sb,
          "                 i_extended_attributes: (U64) "
          CONFIGURE_FMT_UINT64 ",\n"
          "                 i_fragment_address: (U32) %u,\n"
-         "                 i_checksum: (U32) 0x%08X} # 0x%08X",
+         "                 i_checksum: (U32) 0x%08X, # 0x%08X\n"
+         "                 i_extra_isize: (U16) %u,\n"
+         "                 i_project_id: (U32) %u}",
          le32toh(inode_256->inode.i_nfs_generation),
          extended_attributes,
          le32toh(inode_256->inode.i_fragment_address),
-         checksum, checksum_computed);
-  return 0;
-}
-
-int ext4fs_extent_start (const struct ext4fs_extent *extent,
-                         uint64_t *start)
-{
-  assert(extent);
-  assert(start);
-  *start = le32toh(extent->e_start_lo);
-  *start |= (uint64_t) le16toh(extent->e_start_hi) << 32;
+         checksum, checksum_computed,
+         le16toh(inode_256->inode.i_extra_isize),
+         le32toh(inode_256->inode.i_project_id));
   return 0;
 }
 
@@ -828,7 +834,7 @@ int ext4fs_inspect_extent_header (const struct ext4fs_extent_header *eh,
   if (indent >= sizeof(s))
     return -1;
   memset(s, ' ', indent);
-  printf("%s%%Ext4fs.ExtentHeader{eh_magic: (U16) 0x%04X,\t# 0xF30A\n"
+  printf("%s%%Ext4fs.ExtentHeader{eh_magic: (U16) 0x%04X, # 0xF30A\n"
          "%s                     eh_entries: (U16) %u,\n"
          "%s                     eh_max: (U16) %u,\n"
          "%s                     eh_depth: (U16) %u,\n"
