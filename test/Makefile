@@ -44,7 +44,11 @@ ${OBJECTS}: ${HEADERS}
 ${PROG}: ${OBJECTS}
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJECTS} -o ${PROG}
 
-test: build
+test: build test.1.img
 	./${PROG}
+	../inspect_ext4fs/inspect_ext4fs test.1.img > inspect_ext4fs.1.log
+
+test.1.img: test.1.img.xz
+	unxz < test.1.img.xz > test.1.img
 
 .PHONY: all build clean test

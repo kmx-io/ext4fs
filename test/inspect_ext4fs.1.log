@@ -1,4 +1,4 @@
-./inspect_ext4fs/inspect_ext4fs test/test.1.img
+../inspect_ext4fs/inspect_ext4fs test.1.img
 ext4fs_size: 500170752
 %Ext4fs.SuperBlock{sb_inodes_count: (U32) 122112,
                    sb_blocks_count: (U64) 122112,
