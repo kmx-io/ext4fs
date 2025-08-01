@@ -47,6 +47,7 @@ ${PROG}: ${OBJECTS}
 test: build test.1.img
 	./${PROG}
 	../inspect_ext4fs/inspect_ext4fs test.1.img > inspect_ext4fs.1.log
+	diff inspect_ext4fs.1.log inspect_ext4fs.1.log.expected
 
 test.1.img: test.1.img.xz
 	unxz < test.1.img.xz > test.1.img
